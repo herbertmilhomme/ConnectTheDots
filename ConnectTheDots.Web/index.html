@@ -30,9 +30,20 @@
 
 		//Used to send and receive payloads from server
 		app.ports.request.subscribe((message) => {
+			//messages are received from client as json strings, not objects
+			console.log(message);
 			message = JSON.parse(message);
+			console.log(message);
 			// Parse the message to determine a response, then respond:
-			app.ports.response.send({ some: 'object' });
+			app.ports.response.send({
+				msg: "INITIALIZE",
+				//These are the prompts that are displayed back to user's terminal
+				body: {
+					newLine: null,
+					heading: "Player 1",
+					message: "Awaiting Player 1's Move"
+				}
+			});
 		});
 	</script>
 </body>
