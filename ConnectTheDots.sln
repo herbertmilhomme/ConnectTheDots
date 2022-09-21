@@ -3,7 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.32106.194
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectTheDots", "ConnectTheDots.csproj", "{EE5F28EE-4F5F-4218-B128-A3039ED16457}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectTheDots.Web", "ConnectTheDots.Web\ConnectTheDots.Web.csproj", "{40087F56-BB10-4F77-9ED9-E400D0E11535}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{9CF93C78-D83E-44DE-812D-CFEF966C44BE}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +18,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EE5F28EE-4F5F-4218-B128-A3039ED16457}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EE5F28EE-4F5F-4218-B128-A3039ED16457}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EE5F28EE-4F5F-4218-B128-A3039ED16457}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EE5F28EE-4F5F-4218-B128-A3039ED16457}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40087F56-BB10-4F77-9ED9-E400D0E11535}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40087F56-BB10-4F77-9ED9-E400D0E11535}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40087F56-BB10-4F77-9ED9-E400D0E11535}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40087F56-BB10-4F77-9ED9-E400D0E11535}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
