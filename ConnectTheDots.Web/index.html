@@ -21,10 +21,18 @@
 			hostname: '',
 		});
 
+		//Connection drops after 10 mins of inactivity
 		app.ports.startTimer.subscribe((int) => {
 			setTimeout(() => {
 				app.ports.timeout.send(int);
 			}, 10000);
+		});
+
+		//Used to send and receive payloads from server
+		app.ports.request.subscribe((message) => {
+			message = JSON.parse(message);
+			// Parse the message to determine a response, then respond:
+			app.ports.response.send({ some: 'object' });
 		});
 	</script>
 </body>
