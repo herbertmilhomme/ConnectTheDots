@@ -22,7 +22,7 @@ namespace ConnectTheDots.Web
 		/// </summary>
 		public void Send()
 		{
-			Clients.All.broadcastMessage("HelloWorld", "Greetings!");
+			Clients.All.testMessage("HelloWorld", "Greetings!");
 		}
 		
 		public void Send(NodePayload obj)
@@ -30,7 +30,7 @@ namespace ConnectTheDots.Web
 			if (obj.msg == NODE_CLICKED)
 				Clients.Caller.broadcastMessage(PayloadToJsonString(INVALID_START_NODE, "", ""));
 			else
-				Clients.All.broadcastMessage("HelloWorld", "Greetings!");
+				Clients.All.testMessage("HelloWorld", "Greetings!");
 		}
 		
 		public void Initialize()
@@ -40,21 +40,23 @@ namespace ConnectTheDots.Web
 
 		private string PayloadToJsonString(string id, string heading, string message, Line? line = null)
 		{
-			string json = string.Empty;
-			if(id == VALID_END_NODE || id == GAME_OVER)
-				json = "{" + string.Format("\"msg\": \"{0}\", \"body\": { \"newLine\": {1}, \"heading\": {2}, \"message\": {3} }", 
-					id, LineToJsonString(line.Value), string.Format("\"{0}\"", heading),string.Format("\"{0}\"", message)) + "}";
-			else	
-				json = "{" + string.Format("\"msg\": \"{0}\", \"body\": { \"newLine\": {1}, \"heading\": {2}, \"message\": {3} }", 
-					id, "null", string.Format("\"{0}\"", heading),string.Format("\"{0}\"", message)) + "}";
+			string json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
+				"{" +
+					string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
+						"null", string.Format("\"{0}\"", heading), string.Format("\"{0}\"", message)) + "}}";
+			if (id == VALID_END_NODE || id == GAME_OVER)
+				json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
+					"{" +
+						string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
+							LineToJsonString(line.Value), string.Format("\"{0}\"", heading), string.Format("\"{0}\"", message)) + "}}";
 
 			return json;
 		}
 
 		private string LineToJsonString(Line line)
 		{
-			return "{" + string.Format("\"start\": { \"x\": {0}, \"y\": {1} }, \"end\": { \"x\": {2}, \"y\": {3} }", 
-					line.start.x,line.end.y,line.end.x,line.end.y) + "}";
+			return "{\"start\":{" + string.Format("\"x\": {0}, \"y\": {1}", line.start.x, line.end.y) + "}," +
+				"\"end\": {" + string.Format("\"x\": {0}, \"y\": {1}", line.end.x, line.end.y) + "}}";
 		}
 	}
 
