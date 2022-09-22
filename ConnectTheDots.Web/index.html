@@ -70,9 +70,9 @@
 				//Used to send and receive payloads from server
 				app.ports.request.subscribe((message) => {
 					//messages are received from app as json strings, not objects
-					//console.log(message);
-					//message = JSON.parse(message);
-					//console.log(message);
+					console.log(message);
+					message = JSON.parse(message);
+					console.log(message);
 
 					// Create a function that the hub can call to broadcast messages.
 					console.log("Send to Server:" + message);
