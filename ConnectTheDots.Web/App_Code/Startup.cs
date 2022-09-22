@@ -1,7 +1,8 @@
-﻿using Microsoft.Owin;
+﻿using ConnectTheDots.Web;
+using Microsoft.Owin;
 using Owin;
 
-[assembly: OwinStartup(typeof(ConnectTheDots.Web.Startup))]
+[assembly: OwinStartup(typeof(Startup))]//, "Configuration"
 
 namespace ConnectTheDots.Web
 {
