@@ -5,6 +5,9 @@
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
+	<p>If game doesnt start, press button a few times, to reconnect to server</p>
+	<input id="initialize" type="button" name="reset" value="reset" title="reset" />
+	<!--<button id="initialize" type="button" name="reset" title="reset">reset</button>-->
 	<div id="app"></div>
 	<!--Script references. -->
 	<!--Reference the jQuery library. -->
@@ -42,7 +45,25 @@
 			var signalrHub = $.connection.signalRHub;
 
 			// Create a function that the hub can call to broadcast messages.
-			signalrHub.client.broadcastMessage = function (name, message) { console.log(name + '-' + message); };
+			signalrHub.client.testMessage = function (name, message) { console.log(name + '-' + message); };
+
+			signalrHub.client.broadcastMessage = function (message) {
+				console.log(message);
+				message = JSON.parse(message);
+				console.log(message);
+
+				// Parse the message to determine a response, then respond:
+				app.ports.response.send({
+					msg: message.msg,
+					//These are the prompts that are displayed back to user's terminal
+					body: message.body
+					//{
+					//	newLine: null,
+					//	heading: "Player 1",
+					//	message: "Awaiting Player 1's Move"
+					//}
+				});
+			};
 
 			// Start the connection.
 			$.connection.hub.start().done(function () {
@@ -51,22 +72,21 @@
 					//messages are received from app as json strings, not objects
 					//console.log(message);
 					//message = JSON.parse(message);
-					console.log(message);
+					//console.log(message);
 
 					// Create a function that the hub can call to broadcast messages.
-					signalrHub.server.send();
+					console.log("Send to Server:" + message);
+					// Parse the message to determine a response, then respond:
 					signalrHub.server.sendMessage(message);
 				});
 
-				// Parse the message to determine a response, then respond:
-				app.ports.response.send({
-					msg: "INITIALIZE",
-					//These are the prompts that are displayed back to user's terminal
-					body: {
-						newLine: null,
-						heading: "Player 1",
-						message: "Awaiting Player 1's Move"
-					}
+				//$('#initialize').click(function () {
+				document.getElementById('initialize').addEventListener('click', function (event) {
+					console.log("Button clicked!");
+					signalrHub.server.send();
+					// Call the broadcastMessage method on the hub.
+					signalrHub.server.initialize();
+					event.preventDefault();
 				});
 			});
 		});
