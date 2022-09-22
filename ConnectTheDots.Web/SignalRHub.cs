@@ -53,6 +53,11 @@ namespace ConnectTheDots.Web
 			return json;
 		}
 
+		private string PayloadToJsonString(string id, StateUpdate state)
+		{
+			return PayloadToJsonString(id, state.heading, state.message, state.newLine);
+		}
+
 		private string LineToJsonString(Line line)
 		{
 			return "{\"start\":{" + string.Format("\"x\": {0}, \"y\": {1}", line.start.x, line.end.y) + "}," +
@@ -81,7 +86,7 @@ namespace ConnectTheDots.Web
 	/// </summary>
 	public struct StateUpdate
 	{
-		public Point newLine { get; set; }
+		public Line? newLine { get; set; }
 		public string heading { get; set; }
 		public string message { get; set; }
 	}
