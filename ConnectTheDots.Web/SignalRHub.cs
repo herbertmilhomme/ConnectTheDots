@@ -60,8 +60,8 @@ namespace ConnectTheDots.Web
 
 		private string LineToJsonString(Line line)
 		{
-			return "{\"start\":{" + string.Format("\"x\": {0}, \"y\": {1}", line.start.x, line.end.y) + "}," +
-				"\"end\": {" + string.Format("\"x\": {0}, \"y\": {1}", line.end.x, line.end.y) + "}}";
+			return "{\"start\":{" + string.Format("\"x\": {0}, \"y\": {1}", line.start.x, line.start.y) + "}," +
+				"\"end\":{" + string.Format("\"x\": {0}, \"y\": {1}", line.end.x, line.end.y) + "}}";
 		}
 	}
 
