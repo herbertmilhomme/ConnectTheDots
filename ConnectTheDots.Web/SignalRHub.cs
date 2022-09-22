@@ -9,13 +9,7 @@ namespace ConnectTheDots.Web
 {
 	public class SignalRHub : Hub
 	{
-		public const string INITIALIZE			= "INITIALIZE";
-		public const string NODE_CLICKED		= "NODE_CLICKED";
-		public const string VALID_START_NODE	= "VALID_START_NODE";
-		public const string INVALID_START_NODE	= "INVALID_START_NODE";
-		public const string VALID_END_NODE		= "VALID_END_NODE";
-		public const string INVALID_END_NODE	= "INVALID_END_NODE";
-		public const string GAME_OVER			= "GAME_OVER";
+		private Game game = new Game();
 
 		/// <summary>
 		/// This is just to test and confirm the real-time connection between client-server is established
@@ -25,17 +19,20 @@ namespace ConnectTheDots.Web
 			Clients.All.testMessage("HelloWorld", "Greetings!");
 		}
 		
-		public void Send(NodePayload obj)
+		public void Send(IncomingRequest obj)
 		{
-			if (obj.msg == NODE_CLICKED)
-				Clients.Caller.broadcastMessage(PayloadToJsonString(INVALID_START_NODE, "", ""));
+			if (obj.msg == Game.NODE_CLICKED)
+			{
+				Clients.Caller.broadcastMessage(PayloadToJsonString(Game.INVALID_START_NODE, "", "Not a valid starting position."));
+			}
 			else
 				Clients.All.testMessage("HelloWorld", "Greetings!");
 		}
 		
 		public void Initialize()
 		{
-			Clients.All.broadcastMessage(PayloadToJsonString(INITIALIZE, "Player 1", "Awaiting Player 1's Move"));
+			game.Initialize();
+			Clients.All.broadcastMessage(PayloadToJsonString(Game.INITIALIZE, "Player 1", "Awaiting Player 1's Move"));
 		}
 
 		private string PayloadToJsonString(string id, string heading, string message, Line? line = null)
@@ -44,13 +41,19 @@ namespace ConnectTheDots.Web
 				"{" +
 					string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
 						"null", string.Format("\"{0}\"", heading), string.Format("\"{0}\"", message)) + "}}";
-			if (id == VALID_END_NODE || id == GAME_OVER)
+			if (id == Game.VALID_END_NODE || id == Game.GAME_OVER)
 				json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
 					"{" +
 						string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
 							LineToJsonString(line.Value), string.Format("\"{0}\"", heading), string.Format("\"{0}\"", message)) + "}}";
 
 			return json;
+		}
+
+		private string PayloadToJsonString(OutgoingResponse payload)
+		{
+			StateUpdate state = payload.body;
+			return PayloadToJsonString(payload.msg, state.heading, state.message, state.newLine);
 		}
 
 		private string PayloadToJsonString(string id, StateUpdate state)
@@ -93,9 +96,141 @@ namespace ConnectTheDots.Web
 	/// <summary>
 	/// Incoming payload about the node the end user is interacting with
 	/// </summary>
-	public struct NodePayload
+	public struct IncomingRequest
 	{
 		public string msg { get; set; }
 		public Point body { get; set; }
+	}
+	/// <summary>
+	/// Outgoing payload about the node the end user is interacting with
+	/// </summary>
+	public struct OutgoingResponse
+	{
+		public string msg { get; set; }
+		public StateUpdate body { get; set; }
+	}
+	/// <summary>
+	/// This is the dots on game board
+	/// </summary>
+	public class Node
+	{
+		//private Game game;
+		public string pointIndex = string.Empty;
+		public Point Position { get; private set; }
+
+		public Node(Point point)
+		{
+			Position = point;
+		}
+
+		public Node(Point point, string index)
+		{
+			Position = point;
+			pointIndex = index;
+		}
+	}
+	public struct Tile
+	{
+		public Directional Directional;
+		//public NeighborList Neighbors;
+		public Directional Neighbors;
+	}
+	public struct Directional {
+		//True if the node is active
+		//(active represents the node can be selected to form a line between two points)
+		//Null represents the game boundary
+		public bool? U;		//up
+		public bool? UL;	//upleft
+		public bool? UR;	//upright
+		public bool? D;		//down
+		public bool? DL;	//downleft
+		public bool? DR;	//downright
+		public bool? L;		//left
+		public bool? R;		//right
+		public bool? M;		//mid
+	}
+	public enum Directions
+	{
+		UP,
+		DOWN,
+		LEFT,
+		RIGHT,
+		UPLEFT,
+		UPRIGHT,
+		DOWNLEFT,
+		DOWNRIGHT
+	}
+	/// <summary>
+	/// Each move is numbered. Lines that connect more that two nodes have each segment numbered. 
+	/// Player 1 made the odd numbered moves and Player 2 made the even numbered moves. 
+	/// Player 1 made the first move (1) and was forced to make the last move (9). 
+	/// Thus, Player 2 won.
+	/// </summary>
+	/// <remarks>
+	/// The algorithm for the game runs on "Wave function collapse"
+	/// </remarks>
+	public partial class Game
+	{
+		public const string INITIALIZE			= "INITIALIZE";
+		public const string NODE_CLICKED		= "NODE_CLICKED";
+		public const string VALID_START_NODE	= "VALID_START_NODE";
+		public const string INVALID_START_NODE	= "INVALID_START_NODE";
+		public const string VALID_END_NODE		= "VALID_END_NODE";
+		public const string INVALID_END_NODE	= "INVALID_END_NODE";
+		public const string GAME_OVER			= "GAME_OVER";
+		/// <summary>
+		/// Track move-turns made by each entry to queue
+		/// </summary>
+		/// Otherwise, a list of KeyValuePairs would be next solution...
+		public Queue<Line> Turns;
+		public IDictionary<Point, Node> Grid;
+		public bool IsPlayerOneTurn;
+		private Point? startNode;
+		//public Dictionary<Point>
+		public void Initialize()
+		{
+			//Clear values for a new game
+			Turns = new Queue<Line>();
+			Grid = new Dictionary<Point, Node>()
+			{
+				//first row
+				{ new Point { x = 0, y = 0 }, new Node(new Point { x = 0, y = 0 }, "bul") },	//Upper left
+				{ new Point { x = 1, y = 0 }, new Node(new Point { x = 1, y = 0 }, "bu") },		//Upper mid
+				{ new Point { x = 2, y = 0 }, new Node(new Point { x = 2, y = 0 }, "bu") },		//Upper mid
+				{ new Point { x = 3, y = 0 }, new Node(new Point { x = 3, y = 0 }, "bur") }		//Upper right
+			};
+		}
+		Directions CalculateDirection(Line line)
+		{
+			//Positive is Right, Negative is Left
+			int x = line.end.x - line.start.x;
+			int y = line.end.y - line.start.y;
+			//if the neighboring node returns true, it means it can connect
+			if (x > 0)
+			{
+				if (y > 0)
+					return Directions.DOWNRIGHT;
+				if (y < 0)
+					return Directions.UPRIGHT;
+				else
+					return Directions.RIGHT;
+			}
+			else if (x < 0)
+			{
+				if (y > 0)
+					return Directions.DOWNLEFT;
+				if (y < 0)
+					return Directions.UPLEFT;
+				else
+					return Directions.LEFT;
+			}
+			else //if (x < 0)
+			{
+				if (y > 0)
+					return Directions.DOWN;
+				else //if (y < 0)
+					return Directions.UP;
+			}
+		}
 	}
 }
