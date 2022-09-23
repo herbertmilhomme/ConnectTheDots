@@ -218,17 +218,27 @@ namespace ConnectTheDots.Web
 					startNode = point;
 					response.msg = VALID_START_NODE;
 					response.body.heading = Player;
-					response.body.message = null;
+					response.body.message = "Select a second node to complete the line.";
 					return response;
 				}
-				Line line = new Line { start = startNode.Value, end = point };
+				//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
+				if(CalculateSlope(startNode.Value, point))
+				{
+					Line line = new Line { start = startNode.Value, end = point };
+					startNode = null;
+					IsPlayerOneTurn = false;
+					response.msg = VALID_END_NODE;
+					response.body.newLine = line;
+					response.body.heading = Player;
+					response.body.message = null;
+					Turns.Enqueue(line);
+					return response;
+				}
 				startNode = null;
-				IsPlayerOneTurn = false;
-				response.msg = VALID_END_NODE;
-				response.body.newLine = line;
+				response.msg = INVALID_END_NODE;
+				//response.body.newLine = line;
 				response.body.heading = Player;
-				response.body.message = null;
-				Turns.Enqueue(line);
+				response.body.message = "Invalid move!";
 				return response;
 			}
 			return response;
@@ -264,6 +274,15 @@ namespace ConnectTheDots.Web
 				else //if (y < 0)
 					return Directions.UP;
 			}
+		}
+		private static bool CalculateSlope(Point start, Point end)
+		{
+			int x = Math.Abs(start.x - end.x);
+			int y = Math.Abs(start.y - end.y);
+			if (x == 0 || y == 0 || Math.Abs(x - y) == 0)
+				return true;
+			else 
+				return false;
 		}
 	}
 }
