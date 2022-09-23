@@ -9,7 +9,7 @@ namespace ConnectTheDots.Web
 {
 	public class SignalRHub : Hub
 	{
-		private Game game = new Game();
+		private static Game game = new Game();
 
 		/// <summary>
 		/// This is just to test and confirm the real-time connection between client-server is established
@@ -23,7 +23,8 @@ namespace ConnectTheDots.Web
 		{
 			if (obj.msg == Game.NODE_CLICKED)
 			{
-				Clients.Caller.broadcastMessage(PayloadToJsonString(Game.INVALID_START_NODE, "", "Not a valid starting position."));
+				OutgoingResponse arg = game.Action(obj.body);
+				Clients.Caller.broadcastMessage(PayloadToJsonString(arg));
 			}
 			else
 				Clients.All.testMessage("HelloWorld", "Greetings!");
@@ -37,15 +38,18 @@ namespace ConnectTheDots.Web
 
 		private string PayloadToJsonString(string id, string heading, string message, Line? line = null)
 		{
+			string msg = string.IsNullOrEmpty(message) ? "null" : string.Format("\"{0}\"", message);
+			string head = string.IsNullOrEmpty(heading) ? "null" : string.Format("\"{0}\"", heading);
 			string json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
 				"{" +
 					string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
-						"null", string.Format("\"{0}\"", heading), string.Format("\"{0}\"", message)) + "}}";
+						"null", head, msg) + 
+				"}}";
 			if (id == Game.VALID_END_NODE || id == Game.GAME_OVER)
 				json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
 					"{" +
 						string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
-							LineToJsonString(line.Value), string.Format("\"{0}\"", heading), string.Format("\"{0}\"", message)) + "}}";
+							LineToJsonString(line.Value), head, msg) + "}}";
 
 			return json;
 		}
@@ -87,7 +91,7 @@ namespace ConnectTheDots.Web
 	/// <summary>
 	/// Represents a connection between two 2d x/y axis value on a plane
 	/// </summary>
-	public struct StateUpdate
+	public class StateUpdate
 	{
 		public Line? newLine { get; set; }
 		public string heading { get; set; }
@@ -104,10 +108,11 @@ namespace ConnectTheDots.Web
 	/// <summary>
 	/// Outgoing payload about the node the end user is interacting with
 	/// </summary>
-	public struct OutgoingResponse
+	public class OutgoingResponse
 	{
 		public string msg { get; set; }
 		public StateUpdate body { get; set; }
+		public OutgoingResponse() { body = new StateUpdate(); }
 	}
 	/// <summary>
 	/// This is the dots on game board
@@ -186,10 +191,12 @@ namespace ConnectTheDots.Web
 		public IDictionary<Point, Node> Grid;
 		public bool IsPlayerOneTurn;
 		private Point? startNode;
-		//public Dictionary<Point>
+		public string Player { get { return IsPlayerOneTurn ? "Player 1" : "Player 2"; } }
 		public void Initialize()
 		{
 			//Clear values for a new game
+			startNode = null;
+			IsPlayerOneTurn = true;
 			Turns = new Queue<Line>();
 			Grid = new Dictionary<Point, Node>()
 			{
@@ -199,6 +206,32 @@ namespace ConnectTheDots.Web
 				{ new Point { x = 2, y = 0 }, new Node(new Point { x = 2, y = 0 }, "bu") },		//Upper mid
 				{ new Point { x = 3, y = 0 }, new Node(new Point { x = 3, y = 0 }, "bur") }		//Upper right
 			};
+		}
+		public OutgoingResponse Action(Point point)
+		{
+			OutgoingResponse response = new OutgoingResponse();
+			if (Turns.Count == 0)
+			{
+				//First Move of the Game
+				if(startNode == null)
+				{
+					startNode = point;
+					response.msg = VALID_START_NODE;
+					response.body.heading = Player;
+					response.body.message = null;
+					return response;
+				}
+				Line line = new Line { start = startNode.Value, end = point };
+				startNode = null;
+				IsPlayerOneTurn = false;
+				response.msg = VALID_END_NODE;
+				response.body.newLine = line;
+				response.body.heading = Player;
+				response.body.message = null;
+				Turns.Enqueue(line);
+				return response;
+			}
+			return response;
 		}
 		Directions CalculateDirection(Line line)
 		{
