@@ -207,6 +207,7 @@ namespace ConnectTheDots.Web
 		{
 			int count = 0;
 			int turn = Turns.Count;
+			Line line = new Line { start = startNode.Value, end = point };
 			OutgoingResponse response = new OutgoingResponse();
 			if (turn == 0)
 			{
@@ -222,8 +223,7 @@ namespace ConnectTheDots.Web
 				//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
 				if(IsSlopeSymmetrical(startNode.Value, point))
 				{
-					Line line = new Line { start = startNode.Value, end = point };
-					AddPointsInLine(line);
+					AddPointsInLine(line, turn + 1);
 					//The first line both ends are able to branch from...
 					Points[startNode.Value].Start = true;
 					startNode = null;
@@ -232,7 +232,7 @@ namespace ConnectTheDots.Web
 					response.body.newLine = line;
 					response.body.heading = Player;
 					response.body.message = null;
-					Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
+					//Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
 					return response;
 				}
 				startNode = null;
@@ -268,8 +268,9 @@ namespace ConnectTheDots.Web
 				response.body.message = "Select a second node to complete the line.";
 				return response;
 			}
+			Directions direction = CalculateDirection(line);
 			//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
-			if(IsSlopeSymmetrical(startNode.Value, point)) //if it's a straight line and doesnt overlap
+			if (IsSlopeSymmetrical(startNode.Value, point)) //if it's a straight line and doesnt overlap
 			{
 				if (Points[point].End || Points[point].Start == true)
 				{
@@ -280,7 +281,6 @@ namespace ConnectTheDots.Web
 					response.body.message = "Invalid move! Cannot be connected to existing line";
 					return response;
 				}
-				Line line = new Line { start = startNode.Value, end = point };
 				foreach(KeyValuePair<int,Line> l in Turns)
 				{
 					if (LineContainsActivePoint(line)) //Works as name describes, but doesnt work for 1x1 diagnoal units (intersect between lines)
@@ -317,8 +317,8 @@ namespace ConnectTheDots.Web
 				response.body.newLine = line;
 				response.body.heading = Player;
 				response.body.message = null;
-				AddPointsInLine(line);
-				Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
+				AddPointsInLine(line, direction, turn + 1);
+				//Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
 				return response;
 			}
 			startNode = null;
@@ -328,7 +328,7 @@ namespace ConnectTheDots.Web
 			response.body.message = "Invalid move!";
 			return response;
 		}
-		Directions CalculateDirection(Line line)
+		private Directions CalculateDirection(Line line)
 		{
 			//Positive is Right, Negative is Left
 			int x = line.end.x - line.start.x;
@@ -359,68 +359,121 @@ namespace ConnectTheDots.Web
 					return Directions.UP;
 			}
 		}
-		private void AddPointsInLine(Line line)
+		private void AddPointsInLine(Line line, int? turn = null)
+		{
+			Directions d = CalculateDirection(line);
+			AddPointsInLine(line, d, turn);
+		}
+		private void AddPointsInLine(Line line, Directions direction, int? turn = null)
 		{
 			int x = Math.Abs(line.start.x - line.end.x);
 			int y = Math.Abs(line.start.y - line.end.y);
-			int i = 0; int n = 0;
-			Directions d = CalculateDirection(line);
-			switch (d)
+			Point start = new Point(); Point end = new Point(); 
+			int i = 0; int n = 0; int z = 0;  //Z > 0 = next node in sequence, and can form a line with previous
+			switch (direction)
 			{
 				case Directions.UP:
-					for (i = line.start.y; y >= 0; y--, i--)
+					for (i = line.start.y; y >= 0; y--, i--, z++)
 					{
-						Points[new Point { x = line.start.x, y = i }].Start = false;
-						Points[new Point { x = line.start.x, y = i }].End = true;
+						end = new Point { x = line.start.x, y = i };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = line.start.x, y = i + 1 };
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 				case Directions.DOWN:
-					for (i = line.start.y; y >= 0; y--, i++)
+					for (i = line.start.y; y >= 0; y--, i++, z++)
 					{
-						Points[new Point { x = line.start.x, y = i }].Start = false;
-						Points[new Point { x = line.start.x, y = i }].End = true;
+						end = new Point { x = line.start.x, y = i };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = line.start.x, y = i - 1 };
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 				case Directions.LEFT:
-					for (n = line.start.x; x >= 0; x--, n--)
+					for (n = line.start.x; x >= 0; x--, n--, z++)
 					{
-						Points[new Point { x = n, y = line.start.y }].Start = false;
-						Points[new Point { x = n, y = line.start.y }].End = true;
+						end = new Point { x = n, y = line.start.y };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = n + 1, y = line.start.y };
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 				case Directions.RIGHT:
-					for (n = line.start.x; x >= 0; x--, n++)
+					for (n = line.start.x; x >= 0; x--, n++, z++)
 					{
-						Points[new Point { x = n, y = line.start.y }].Start = false;
-						Points[new Point { x = n, y = line.start.y }].End = true;
+						end = new Point { x = n, y = line.start.y };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = n - 1, y = line.start.y };
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 				case Directions.UPLEFT:
-					for (i = line.start.y, n = line.start.x; y >= 0; y--, i--, n--)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i--, n--, z++)
 					{
-						Points[new Point { x = n, y = i }].Start = false;
-						Points[new Point { x = n, y = i }].End = true;
+						end = new Point { x = n, y = i };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = n + 1, y = i + 1 };
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 				case Directions.UPRIGHT:
-					for (i = line.start.y, n = line.start.x; y >= 0; y--, i--, n++)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i--, n++, z++)
 					{
-						Points[new Point { x = n, y = i }].Start = false;
-						Points[new Point { x = n, y = i }].End = true;
+						end = new Point { x = n, y = i };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = n - 1, y = i + 1 };
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 				case Directions.DOWNLEFT:
-					for (i = line.start.y, n = line.start.x; y >= 0; y--, i++, n--)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i++, n--, z++)
 					{
-						Points[new Point { x = n, y = i }].Start = false;
-						Points[new Point { x = n, y = i }].End = true;
+						end = new Point { x = n, y = i };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = n + 1, y = i - 1};
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 				case Directions.DOWNRIGHT:
-					for (i = line.start.y, n = line.start.x; y >= 0; y--, i++, n++)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i++, n++, z++)
 					{
-						Points[new Point { x = n, y = i }].Start = false;
-						Points[new Point { x = n, y = i }].End = true;
+						end = new Point { x = n, y = i };
+						Points[end].Start = false;
+						Points[end].End = true;
+						if (turn.HasValue && z > 0)
+						{
+							start = new Point { x = n - 1, y = i - 1 };
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+						}
 					}
 					break;
 			}
