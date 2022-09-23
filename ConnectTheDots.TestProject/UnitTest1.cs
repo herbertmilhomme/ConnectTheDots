@@ -12,6 +12,16 @@ namespace ConnectTheDots.TestProject
 	public class UnitTest1
 	{
 		List<IncomingRequest> Actions = new List<IncomingRequest> { };
+		/**
+		 * List of Bugs:
+		 * Both Start and End Node can overlap, and cause game to no longer be operable.
+		 * Line segments can cross/overlap on float values (the calculations were only performed on whole integers)
+		 * Depending on conditional used to resolve overlap function, prevents valid lines from passing checks in specific directions (has something to do with >,<,= on start-end x/y)
+		 *	-So if the line is on the same x or y value, or is greater or less than a certain value on axis (pointing in wrong direction), may invalidate node
+		 *	--Hard to tell specifically which math function is causing a specific issue, because multiples are combining together to return a singular [bool] value
+		 *	--Certain iterations of changes worked and performed better than others, but unit testing was only designed for trial and error, and not precision accuracy 
+		 */
+
 
 		[TestMethod]
 		public void TestLineSegmentCannotOverlap()
@@ -65,7 +75,7 @@ namespace ConnectTheDots.TestProject
 					//PayloadToJsonString(arg);
 				}
 			}
-			arg = game.Action(new Point { x = 0, y = 0 });
+			arg = game.Action(new Point { x = 0, y = 0 }); //Placed here for breakpoint
 			Assert.AreEqual(Game.INVALID_END_NODE, arg?.msg); //As long as last message is invalid 
 		}
 	}

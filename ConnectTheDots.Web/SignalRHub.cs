@@ -181,7 +181,8 @@ namespace ConnectTheDots.Web
 	/// Thus, Player 2 won.
 	/// </summary>
 	/// <remarks>
-	/// The algorithm for the game runs on "Wave function collapse"
+	/// The best algorithm to use for the game, would be to run a "Wave function collapse"
+	/// But i dont have enough time, to put together the resources to resolve the logic sequence
 	/// </remarks>
 	public partial class Game
 	{
@@ -230,7 +231,7 @@ namespace ConnectTheDots.Web
 					return response;
 				}
 				//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
-				if(IsSlopeStraight(startNode.Value, point))
+				if(IsSlopeSymmetrical(startNode.Value, point))
 				{
 					Line line = new Line { start = startNode.Value, end = point };
 					startNode = null;
@@ -277,44 +278,44 @@ namespace ConnectTheDots.Web
 				return response;
 			}
 			//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
-			if(IsSlopeStraight(startNode.Value, point))
+			if(IsSlopeSymmetrical(startNode.Value, point))
 			{
 				Line line = new Line { start = startNode.Value, end = point };
 				//Check existing moves played on board....
-				//foreach(KeyValuePair<int,Line> l in Turns)
-				//{
-				//	//Check if the next end point doesnt connect
-				//	if(l.Value.start == point || l.Value.end == point)
-				//	{
-				//		count++;
-				//	}
-				//	//ToDo: Check if the new line intersects between any existing line...
-				//	else if(LinesIntersect(line, l.Value))
-				//	{
-				//		startNode = null;
-				//		response.msg = INVALID_END_NODE;
-				//		//response.body.newLine = line;
-				//		response.body.heading = Player;
-				//		response.body.message = "Invalid move! Intersection.";
-				//		return response;
-				//	}
-				//}
-				//if(count > 0) //0 means it doesnt connect, line cant be anywhere near each other
-				//{
-				//	startNode = null;
-				//	response.msg = INVALID_END_NODE;
-				//	//response.body.newLine = line;
-				//	response.body.heading = Player;
-				//	response.body.message = "Invalid move! Cannot be connect to existing line";
-				//	return response;
-				//}
-				if(LineContainsActivePoint(line)) //0 means it doesnt connect, line cant be anywhere near each other
+				foreach(KeyValuePair<int,Line> l in Turns)
+				{
+					//Check if the next end point doesnt connect
+					if(l.Value.start == point || l.Value.end == point)
+					{
+						count++;
+					}
+					//ToDo: Check if the new line intersects between any existing line...
+					//else if(LinesIntersect(line, l.Value)) //Too Sensitive, start nodes triggered bool
+					//{
+					//	startNode = null;
+					//	response.msg = INVALID_END_NODE;
+					//	//response.body.newLine = line;
+					//	response.body.heading = Player;
+					//	response.body.message = "Invalid move! Intersection.";
+					//	return response;
+					//}
+				}
+				if(count > 0) //0 means it doesnt connect, line cant be anywhere near each other
 				{
 					startNode = null;
 					response.msg = INVALID_END_NODE;
 					//response.body.newLine = line;
 					response.body.heading = Player;
-					response.body.message = "Invalid move!"; //Cannot be connect to existing line
+					response.body.message = "Invalid move! Cannot be connect to existing line";
+					return response;
+				}
+				if(LineContainsActivePoint(line)) //Works better as intersect checker than preventing connected lines
+				{
+					startNode = null;
+					response.msg = INVALID_END_NODE;
+					//response.body.newLine = line;
+					response.body.heading = Player;
+					response.body.message = "Invalid move! Intersection.";
 					return response;
 				}
 				startNode = null;
@@ -412,6 +413,8 @@ namespace ConnectTheDots.Web
 			//Determine if positive or negative for loop below
 			int directionX = line.end.x - line.start.x;
 			int directionY = line.end.y - line.start.y;
+			//Only works to check if lines interect by checking node points. 
+			//ToDo: If an X is formed between nodes, the loop does not prevent it...
 			foreach(KeyValuePair<Point,bool> pair in Points)
 			{
 				if (!pair.Value) continue; //If the point is not used in game; skip it
@@ -420,23 +423,37 @@ namespace ConnectTheDots.Web
 				bool isOnX = false; //is the point horizontal to line?
 				bool isOnY = false; //is the point vertical to line?
 				if (directionX > 0) //means end is greater than start
-					if (line.start.x < p.x && p.x < line.end.x)
+				{
+					if (line.start.x < p.x && p.x <= line.end.x)
 						isOnX = true;
+				}
 				else //(directionX < 0) //means start is greater than end
-					if (line.start.x > p.x && p.x > line.end.x)
+				{
+					if (line.start.x > p.x && p.x >= line.end.x)
 						isOnX = true;
+				}
 				if (directionY > 0) //means end is greater than start
-					if (line.start.y < p.y && p.y < line.end.y)
+				{
+					if (line.start.y < p.y && p.y <= line.end.y)
 						isOnY = true;
+				}
 				else //(directionY < 0) //means start is greater than end
-					if (line.start.y > p.y && p.y > line.end.y)
+				{
+					if (line.start.y > p.y && p.y >= line.end.y)
 						isOnY = true;
+				}
 				if (isOnX || isOnY)
 					return true; //it means the point collides with the line
 			}
 			return false;
 		}
-		private static bool IsSlopeStraight(Point start, Point end)
+		/// <summary>
+		/// Returns tru if slope or angle of line is 45 degress
+		/// </summary>
+		/// <param name="start"></param>
+		/// <param name="end"></param>
+		/// <returns></returns>
+		private static bool IsSlopeSymmetrical(Point start, Point end)
 		{
 			int x = Math.Abs(start.x - end.x);
 			int y = Math.Abs(start.y - end.y);
