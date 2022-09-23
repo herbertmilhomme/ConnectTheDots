@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionF
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectTheDots.TestProject", "ConnectTheDots.TestProject\ConnectTheDots.TestProject.csproj", "{A6591698-A221-4C85-8DDB-756049D30711}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,6 +24,10 @@ Global
 		{40087F56-BB10-4F77-9ED9-E400D0E11535}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40087F56-BB10-4F77-9ED9-E400D0E11535}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40087F56-BB10-4F77-9ED9-E400D0E11535}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6591698-A221-4C85-8DDB-756049D30711}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6591698-A221-4C85-8DDB-756049D30711}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6591698-A221-4C85-8DDB-756049D30711}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6591698-A221-4C85-8DDB-756049D30711}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
