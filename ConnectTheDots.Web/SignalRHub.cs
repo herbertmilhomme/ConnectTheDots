@@ -207,20 +207,10 @@ namespace ConnectTheDots.Web
 			startNode = null;
 			IsPlayerOneTurn = true;
 			Turns = new List<KeyValuePair<int, Line>>();
-			//Grid = new Dictionary<Point, Node>()
-			//{
-			//	//first row
-			//	{ new Point { x = 0, y = 0 }, new Node(new Point { x = 0, y = 0 }, "bul") },	//Upper left
-			//	{ new Point { x = 1, y = 0 }, new Node(new Point { x = 1, y = 0 }, "bu") },		//Upper mid
-			//	{ new Point { x = 2, y = 0 }, new Node(new Point { x = 2, y = 0 }, "bu") },		//Upper mid
-			//	{ new Point { x = 3, y = 0 }, new Node(new Point { x = 3, y = 0 }, "bur") }		//Upper right
-			//};
 			Points = new Dictionary<Point, bool>();
-			//for (int z = 0; z < 16; z++)
-				for (int y = 0; y < 4; y++)
-					for (int x = 0; x < 4; x++)
-						if ((x >= 0 || x < 4) && (y >= 0 || y < 4)) //Found a -1,-1 bug...
-							Points.Add(new Point { x = x, y = y }, false);
+			for (int y = 0; y < 4; y++)
+				for (int x = 0; x < 4; x++)
+						Points.Add(new Point { x = x, y = y }, false);
 						
 		}
 		public OutgoingResponse Action(Point point)
@@ -349,7 +339,6 @@ namespace ConnectTheDots.Web
 			//Positive is Right, Negative is Left
 			int x = line.end.x - line.start.x;
 			int y = line.end.y - line.start.y;
-			//if the neighboring node returns true, it means it can connect
 			if (x > 0)
 			{
 				if (y > 0)
