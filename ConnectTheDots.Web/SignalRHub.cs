@@ -79,6 +79,15 @@ namespace ConnectTheDots.Web
 	{
 		public int x { get; set; }
 		public int y { get; set; }
+		public static bool operator ==(Point a, Point b)
+		{
+			return a.x == b.x && a.y == b.y;
+		}
+
+		public static bool operator !=(Point x, Point y)
+		{
+			return !(x == y);
+		}
 	}
 	/// <summary>
 	/// Represents a connection between two 2d x/y axis value on a plane
@@ -186,9 +195,9 @@ namespace ConnectTheDots.Web
 		/// <summary>
 		/// Track move-turns made by each entry to queue
 		/// </summary>
-		/// Otherwise, a list of KeyValuePairs would be next solution...
-		public Queue<Line> Turns;
-		public IDictionary<Point, Node> Grid;
+		public List<KeyValuePair<int,Line>> Turns;
+		//public IDictionary<Point, Node> Grid;
+		public IDictionary<Point, bool> Points;
 		public bool IsPlayerOneTurn;
 		private Point? startNode;
 		public string Player { get { return IsPlayerOneTurn ? "Player 1" : "Player 2"; } }
@@ -197,20 +206,29 @@ namespace ConnectTheDots.Web
 			//Clear values for a new game
 			startNode = null;
 			IsPlayerOneTurn = true;
-			Turns = new Queue<Line>();
-			Grid = new Dictionary<Point, Node>()
-			{
-				//first row
-				{ new Point { x = 0, y = 0 }, new Node(new Point { x = 0, y = 0 }, "bul") },	//Upper left
-				{ new Point { x = 1, y = 0 }, new Node(new Point { x = 1, y = 0 }, "bu") },		//Upper mid
-				{ new Point { x = 2, y = 0 }, new Node(new Point { x = 2, y = 0 }, "bu") },		//Upper mid
-				{ new Point { x = 3, y = 0 }, new Node(new Point { x = 3, y = 0 }, "bur") }		//Upper right
-			};
+			Turns = new List<KeyValuePair<int, Line>>();
+			//Grid = new Dictionary<Point, Node>()
+			//{
+			//	//first row
+			//	{ new Point { x = 0, y = 0 }, new Node(new Point { x = 0, y = 0 }, "bul") },	//Upper left
+			//	{ new Point { x = 1, y = 0 }, new Node(new Point { x = 1, y = 0 }, "bu") },		//Upper mid
+			//	{ new Point { x = 2, y = 0 }, new Node(new Point { x = 2, y = 0 }, "bu") },		//Upper mid
+			//	{ new Point { x = 3, y = 0 }, new Node(new Point { x = 3, y = 0 }, "bur") }		//Upper right
+			//};
+			Points = new Dictionary<Point, bool>();
+			//for (int z = 0; z < 16; z++)
+				for (int y = 0; y < 4; y++)
+					for (int x = 0; x < 4; x++)
+						if ((x >= 0 || x < 4) && (y >= 0 || y < 4)) //Found a -1,-1 bug...
+							Points.Add(new Point { x = x, y = y }, false);
+						
 		}
 		public OutgoingResponse Action(Point point)
 		{
+			int count = 0;
+			int turn = Turns.Count;
 			OutgoingResponse response = new OutgoingResponse();
-			if (Turns.Count == 0)
+			if (turn == 0)
 			{
 				//First Move of the Game
 				if(startNode == null)
@@ -222,7 +240,7 @@ namespace ConnectTheDots.Web
 					return response;
 				}
 				//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
-				if(CalculateSlope(startNode.Value, point))
+				if(IsSlopeStraight(startNode.Value, point))
 				{
 					Line line = new Line { start = startNode.Value, end = point };
 					startNode = null;
@@ -231,7 +249,8 @@ namespace ConnectTheDots.Web
 					response.body.newLine = line;
 					response.body.heading = Player;
 					response.body.message = null;
-					Turns.Enqueue(line);
+					AddPointsInLine(line);
+					Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
 					return response;
 				}
 				startNode = null;
@@ -241,6 +260,88 @@ namespace ConnectTheDots.Web
 				response.body.message = "Invalid move!";
 				return response;
 			}
+			//Every move after must connect from the first...
+			if(startNode == null)
+			{
+				//Check existing moves played on board....
+				foreach(KeyValuePair<int,Line> l in Turns)
+				{
+					//Check if the next start point is on either end of point
+					if(l.Value.start == point || l.Value.end == point)
+					{
+						count++;
+					}
+				}
+				if(count == 0 || count > 1) //0 means it doesnt connect, 2 means it's already active
+				{
+					response.msg = INVALID_START_NODE;
+					//response.body.newLine = line;
+					response.body.heading = Player;
+					response.body.message = "Not a valid starting position.";
+					return response;
+				}
+				startNode = point;
+				response.msg = VALID_START_NODE;
+				response.body.heading = Player;
+				response.body.message = "Select a second node to complete the line.";
+				return response;
+			}
+			//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
+			if(IsSlopeStraight(startNode.Value, point))
+			{
+				Line line = new Line { start = startNode.Value, end = point };
+				//Check existing moves played on board....
+				//foreach(KeyValuePair<int,Line> l in Turns)
+				//{
+				//	//Check if the next end point doesnt connect
+				//	if(l.Value.start == point || l.Value.end == point)
+				//	{
+				//		count++;
+				//	}
+				//	//ToDo: Check if the new line intersects between any existing line...
+				//	else if(LinesIntersect(line, l.Value))
+				//	{
+				//		startNode = null;
+				//		response.msg = INVALID_END_NODE;
+				//		//response.body.newLine = line;
+				//		response.body.heading = Player;
+				//		response.body.message = "Invalid move! Intersection.";
+				//		return response;
+				//	}
+				//}
+				//if(count > 0) //0 means it doesnt connect, line cant be anywhere near each other
+				//{
+				//	startNode = null;
+				//	response.msg = INVALID_END_NODE;
+				//	//response.body.newLine = line;
+				//	response.body.heading = Player;
+				//	response.body.message = "Invalid move! Cannot be connect to existing line";
+				//	return response;
+				//}
+				if(LineContainsActivePoint(line)) //0 means it doesnt connect, line cant be anywhere near each other
+				{
+					startNode = null;
+					response.msg = INVALID_END_NODE;
+					//response.body.newLine = line;
+					response.body.heading = Player;
+					response.body.message = "Invalid move!"; //Cannot be connect to existing line
+					return response;
+				}
+				startNode = null;
+				IsPlayerOneTurn = false;
+				response.msg = VALID_END_NODE;
+				response.body.newLine = line;
+				response.body.heading = Player;
+				response.body.message = null;
+				AddPointsInLine(line);
+				Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
+				return response;
+			}
+			startNode = null;
+			response.msg = INVALID_END_NODE;
+			//response.body.newLine = line;
+			response.body.heading = Player;
+			response.body.message = "Invalid move!";
 			return response;
 		}
 		Directions CalculateDirection(Line line)
@@ -275,7 +376,78 @@ namespace ConnectTheDots.Web
 					return Directions.UP;
 			}
 		}
-		private static bool CalculateSlope(Point start, Point end)
+		private void AddPointsInLine(Line line)
+		{
+			int x = Math.Abs(line.start.x - line.end.x);
+			int y = Math.Abs(line.start.y - line.end.y);
+			int i = 0; int n = 0;
+			Directions d = CalculateDirection(line);
+			switch (d)
+			{
+				case Directions.UP:
+					for (i = line.start.y; y < 0; y++, i--)
+						Points[new Point { x = line.start.x, y = i }] = true;
+					break;
+				case Directions.DOWN:
+					for (i = line.start.y; y > 0; y--, i++)
+						Points[new Point { x = line.start.x, y = i }] = true;
+					break;
+				case Directions.LEFT:
+					for (n = line.start.x; x < 0; x++, n--)
+						Points[new Point { x = n, y = line.start.y }] = true;
+					break;
+				case Directions.RIGHT:
+					for (n = line.start.x; x > 0; x--, n++)
+						Points[new Point { x = n, y = line.start.y }] = true;
+					break;
+				case Directions.UPLEFT:
+					for (i = line.start.y, n = line.start.x; y < 0; y++, i--, n--)
+						Points[new Point { x = n, y = i }] = true;
+					break;
+				case Directions.UPRIGHT:
+					for (i = line.start.y, n = line.start.x; y < 0; y++, i--, n++)
+						Points[new Point { x = n, y = i }] = true;
+					break;
+				case Directions.DOWNLEFT:
+					for (i = line.start.y, n = line.start.x; y > 0; y--, i++, n--)
+						Points[new Point { x = n, y = i }] = true;
+					break;
+				case Directions.DOWNRIGHT:
+					for (i = line.start.y, n = line.start.x; y > 0; y--, i++, n++)
+						Points[new Point { x = n, y = i }] = true;
+					break;
+			}
+		}
+		private bool LineContainsActivePoint(Line line)
+		{
+			//Determine if positive or negative for loop below
+			int directionX = line.end.x - line.start.x;
+			int directionY = line.end.y - line.start.y;
+			foreach(KeyValuePair<Point,bool> pair in Points)
+			{
+				if (!pair.Value) continue; //If the point is not used in game; skip it
+				if (line.start == pair.Key) continue; //Exceptions made for start of line
+				Point p = pair.Key;
+				bool isOnX = false; //is the point horizontal to line?
+				bool isOnY = false; //is the point vertical to line?
+				if (directionX > 0) //means end is greater than start
+					if (line.start.x < p.x && p.x < line.end.x)
+						isOnX = true;
+				else //(directionX < 0) //means start is greater than end
+					if (line.start.x > p.x && p.x > line.end.x)
+						isOnX = true;
+				if (directionY > 0) //means end is greater than start
+					if (line.start.y < p.y && p.y < line.end.y)
+						isOnY = true;
+				else //(directionY < 0) //means start is greater than end
+					if (line.start.y > p.y && p.y > line.end.y)
+						isOnY = true;
+				if (isOnX || isOnY)
+					return true; //it means the point collides with the line
+			}
+			return false;
+		}
+		private static bool IsSlopeStraight(Point start, Point end)
 		{
 			int x = Math.Abs(start.x - end.x);
 			int y = Math.Abs(start.y - end.y);
@@ -284,5 +456,73 @@ namespace ConnectTheDots.Web
 			else 
 				return false;
 		}
+		/*// <summary>
+		/// Return true if line segments AB and CD intersect
+		/// </summary>
+		/// <param name="a"></param>
+		/// <param name="b"></param>
+		/// <returns></returns>
+		private static bool LinesIntersect(Line a, Line b)
+		{
+			return doIntersect(a.start, b.start, a.end, b.end);
+		}
+		//https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+		// The main function that returns true if line segment 'p1q1'
+		// and 'p2q2' intersect.
+		static bool doIntersect(Point p1, Point q1, Point p2, Point q2)
+		{
+			// Find the four orientations needed for general and
+			// special cases
+			int o1 = orientation(p1, q1, p2);
+			int o2 = orientation(p1, q1, q2);
+			int o3 = orientation(p2, q2, p1);
+			int o4 = orientation(p2, q2, q1);
+
+			// General case
+			if (o1 != o2 && o3 != o4)
+				return true;
+
+			// Special Cases
+			// p1, q1 and p2 are collinear and p2 lies on segment p1q1
+			//if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+
+			// p1, q1 and q2 are collinear and q2 lies on segment p1q1
+			//if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+
+			// p2, q2 and p1 are collinear and p1 lies on segment p2q2
+			//if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+
+			// p2, q2 and q1 are collinear and q1 lies on segment p2q2
+			//if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+			return false; // Doesn't fall in any of the above cases
+		}
+
+		// To find orientation of ordered triplet (p, q, r).
+		// The function returns following values
+		// 0 --> p, q and r are collinear
+		// 1 --> Clockwise
+		// 2 --> Counterclockwise
+		static int orientation(Point p, Point q, Point r)
+		{
+			// See https://www.geeksforgeeks.org/orientation-3-ordered-points/
+			// for details of below formula.
+			int val = (q.y - p.y) * (r.x - q.x) -
+					(q.x - p.x) * (r.y - q.y);
+
+			if (val == 0) return 0; // collinear
+
+			return (val > 0) ? 1 : 2; // clock or counterclock wise
+		}
+		// Given three collinear points p, q, r, the function checks if
+		// point q lies on line segment 'pr'
+		static bool onSegment(Point p, Point q, Point r)
+		{
+			if (q.x <= Math.Max(p.x, r.x) && q.x >= Math.Min(p.x, r.x) &&
+				q.y <= Math.Max(p.y, r.y) && q.y >= Math.Min(p.y, r.y))
+				return true;
+
+			return false;
+		}*/
 	}
 }
