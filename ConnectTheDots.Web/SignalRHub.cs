@@ -385,35 +385,35 @@ namespace ConnectTheDots.Web
 			switch (d)
 			{
 				case Directions.UP:
-					for (i = line.start.y; y < 0; y++, i--)
+					for (i = line.start.y; y >= 0; y--, i--)
 						Points[new Point { x = line.start.x, y = i }] = true;
 					break;
 				case Directions.DOWN:
-					for (i = line.start.y; y > 0; y--, i++)
+					for (i = line.start.y; y >= 0; y--, i++)
 						Points[new Point { x = line.start.x, y = i }] = true;
 					break;
 				case Directions.LEFT:
-					for (n = line.start.x; x < 0; x++, n--)
+					for (n = line.start.x; x >= 0; x--, n--)
 						Points[new Point { x = n, y = line.start.y }] = true;
 					break;
 				case Directions.RIGHT:
-					for (n = line.start.x; x > 0; x--, n++)
+					for (n = line.start.x; x >= 0; x--, n++)
 						Points[new Point { x = n, y = line.start.y }] = true;
 					break;
 				case Directions.UPLEFT:
-					for (i = line.start.y, n = line.start.x; y < 0; y++, i--, n--)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i--, n--)
 						Points[new Point { x = n, y = i }] = true;
 					break;
 				case Directions.UPRIGHT:
-					for (i = line.start.y, n = line.start.x; y < 0; y++, i--, n++)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i--, n++)
 						Points[new Point { x = n, y = i }] = true;
 					break;
 				case Directions.DOWNLEFT:
-					for (i = line.start.y, n = line.start.x; y > 0; y--, i++, n--)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i++, n--)
 						Points[new Point { x = n, y = i }] = true;
 					break;
 				case Directions.DOWNRIGHT:
-					for (i = line.start.y, n = line.start.x; y > 0; y--, i++, n++)
+					for (i = line.start.y, n = line.start.x; y >= 0; y--, i++, n++)
 						Points[new Point { x = n, y = i }] = true;
 					break;
 			}
