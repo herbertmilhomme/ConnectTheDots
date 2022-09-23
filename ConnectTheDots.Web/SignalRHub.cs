@@ -150,26 +150,6 @@ namespace ConnectTheDots.Web
 			Position = point;
 		}
 	}
-	public struct Tile
-	{
-		public Directional Directional;
-		//public NeighborList Neighbors;
-		public Directional Neighbors;
-	}
-	public struct Directional {
-		//True if the node is active
-		//(active represents the node can be selected to form a line between two points)
-		//Null represents the game boundary
-		public bool? U;		//up
-		public bool? UL;	//upleft
-		public bool? UR;	//upright
-		public bool? D;		//down
-		public bool? DL;	//downleft
-		public bool? DR;	//downright
-		public bool? L;		//left
-		public bool? R;		//right
-		public bool? M;		//mid
-	}
 	public enum Directions
 	{
 		UP,
@@ -201,9 +181,12 @@ namespace ConnectTheDots.Web
 		public const string INVALID_END_NODE	= "INVALID_END_NODE";
 		public const string GAME_OVER			= "GAME_OVER";
 		/// <summary>
-		/// Track move-turns made by each entry to queue
+		/// Track move-turns made by each entry to a numbered list
 		/// </summary>
 		public List<KeyValuePair<int,Line>> Turns;
+		/// <summary>
+		/// A HashSet that stores all the values on game grid, and tracks status Nodes
+		/// </summary>
 		public IDictionary<Point, Node> Points;
 		public bool IsPlayerOneTurn;
 		private Point? startNode;
@@ -300,7 +283,7 @@ namespace ConnectTheDots.Web
 				Line line = new Line { start = startNode.Value, end = point };
 				foreach(KeyValuePair<int,Line> l in Turns)
 				{
-					if (LineContainsActivePoint(line)) //Works better as intersect checker than preventing connected lines
+					if (LineContainsActivePoint(line)) //Works as name describes, but doesnt work for 1x1 diagnoal units (intersect between lines)
 					{
 						startNode = null;
 						response.msg = INVALID_END_NODE;
@@ -310,6 +293,8 @@ namespace ConnectTheDots.Web
 						return response;
 					}
 				}
+				//If I could resolve math equation for line segment intersect below... i could probably complete the game engine
+				//Run a loop each turn to check if game has ended, if there are no more moves available
 				//foreach(KeyValuePair<Point,Node> pair in Points)
 				//{
 				//	//Go through each available node, and try to connect a line between available and edge node
@@ -325,15 +310,6 @@ namespace ConnectTheDots.Web
 				//		response.body.message = "Invalid move! Intersection. ";
 				//		return response;
 				//	}
-				//}
-				//if(LineContainsActivePoint(line)) //Works better as intersect checker than preventing connected lines
-				//{
-				//	startNode = null;
-				//	response.msg = INVALID_END_NODE;
-				//	//response.body.newLine = line;
-				//	response.body.heading = Player;
-				//	response.body.message = "Invalid move! Intersection.";
-				//	return response;
 				//}
 				startNode = null;
 				IsPlayerOneTurn = false;
@@ -527,8 +503,8 @@ namespace ConnectTheDots.Web
 			int o4 = orientation(p2, q2, q1);
 
 			// General case
-			//if (o1 != o2 && o3 != o4)
-			//	return true;
+			if (o1 != o2 && o3 != o4)
+				return true;
 
 			// Special Cases
 			// p1, q1 and p2 are collinear and p2 lies on segment p1q1
@@ -566,8 +542,8 @@ namespace ConnectTheDots.Web
 		// point q lies on line segment 'pr'
 		static bool onSegment(Point p, Point q, Point r)
 		{
-			if (q.x < Math.Max(p.x, r.x) && q.x > Math.Min(p.x, r.x) &&
-				q.y < Math.Max(p.y, r.y) && q.y > Math.Min(p.y, r.y))
+			if (q.x <= Math.Max(p.x, r.x) && q.x >= Math.Min(p.x, r.x) &&
+				q.y <= Math.Max(p.y, r.y) && q.y >= Math.Min(p.y, r.y))
 				return true;
 
 			return false;
