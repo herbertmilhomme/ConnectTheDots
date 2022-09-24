@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR;
 
@@ -101,6 +102,15 @@ namespace ConnectTheDots.Web
 	{
 		public Point start { get; set; }
 		public Point end { get; set; }
+		public static bool operator ==(Line a, Line b)
+		{
+			return (a.start == b.start && a.end == b.end) || (a.start == b.end && a.end == b.start);
+		}
+
+		public static bool operator !=(Line x, Line y)
+		{
+			return !(x == y);
+		}
 	}
 	/// <summary>
 	/// Represents a connection between two 2d x/y axis value on a plane
@@ -281,6 +291,15 @@ namespace ConnectTheDots.Web
 					response.body.message = "Invalid move! Cannot be connected to existing line";
 					return response;
 				}
+				if (IsDiagonalOverlap(startNode.Value, direction))
+				{
+					startNode = null;
+					response.msg = INVALID_END_NODE;
+					//response.body.newLine = line;
+					response.body.heading = Player;
+					response.body.message = "Invalid move! Intersection.";
+					return response;
+				}
 				foreach(KeyValuePair<int,Line> l in Turns)
 				{
 					if (LineContainsActivePoint(line)) //Works as name describes, but doesnt work for 1x1 diagnoal units (intersect between lines)
@@ -358,6 +377,44 @@ namespace ConnectTheDots.Web
 				else //if (y < 0)
 					return Directions.UP;
 			}
+		}
+		private bool IsDiagonalOverlap(Point origin, Directions direction)
+		{
+			//Positive is Right, Negative is Left
+			//Need to confirm if the two nodes form a connecting line between each other (that blocks path)
+			if (direction == Directions.UPRIGHT) 
+				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//UP 
+				//	&& Points[new Point { x = start.x - 1, y = start.y }].End;  //RIGHT
+				return Turns.Any(x => x.Value == new Line
+				{
+					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP 
+					end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
+				});
+			else if (direction == Directions.UPLEFT) 
+				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//UP 
+				//	&& Points[new Point { x = start.x + 1, y = start.y }].End;  //LEFT
+				return Turns.Any(x => x.Value == new Line
+				{
+					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP 
+					end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
+				});
+			else if (direction == Directions.DOWNLEFT) 
+				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//DOWN
+				//	&& Points[new Point { x = start.x - 1, y = start.y }].End;  //LEFT
+				return Turns.Any(x => x.Value == new Line
+				{
+					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN 
+					end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
+				});
+			else if (direction == Directions.DOWNRIGHT) 
+				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//DOWN
+				//	&& Points[new Point { x = start.x - 1, y = start.y }].End;  //RIGHT
+				return Turns.Any(x => x.Value == new Line
+				{
+					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN 
+					end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
+				});
+			return false;
 		}
 		private void AddPointsInLine(Line line, int? turn = null)
 		{
