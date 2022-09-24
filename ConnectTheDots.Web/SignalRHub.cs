@@ -78,6 +78,7 @@ namespace ConnectTheDots.Web
 		}
 	}
 
+	#region Entity Models
 	/// <summary>
 	/// Represents a 2d x/y axis value on a plane
 	/// </summary>
@@ -171,11 +172,9 @@ namespace ConnectTheDots.Web
 		DOWNLEFT,
 		DOWNRIGHT
 	}
+	#endregion
+
 	/// <summary>
-	/// Each move is numbered. Lines that connect more that two nodes have each segment numbered. 
-	/// Player 1 made the odd numbered moves and Player 2 made the even numbered moves. 
-	/// Player 1 made the first move (1) and was forced to make the last move (9). 
-	/// Thus, Player 2 won.
 	/// </summary>
 	/// <remarks>
 	/// The best algorithm to use for the game, would be to run a "Wave function collapse"
@@ -193,6 +192,7 @@ namespace ConnectTheDots.Web
 		/// <summary>
 		/// Track move-turns made by each entry to a numbered list
 		/// </summary>
+		/// Each move is numbered. Lines that connect more that two nodes have each segment numbered. 
 		public List<KeyValuePair<int,Line>> Turns;
 		/// <summary>
 		/// A HashSet that stores all the values on game grid, and tracks status Nodes
@@ -201,6 +201,7 @@ namespace ConnectTheDots.Web
 		public bool IsPlayerOneTurn;
 		private Point? startNode;
 		public string Player { get { return IsPlayerOneTurn ? "Player 1" : "Player 2"; } }
+
 		public void Initialize()
 		{
 			//Clear values for a new game
@@ -219,6 +220,7 @@ namespace ConnectTheDots.Web
 			int turn = Turns.Count;
 			Line line = new Line ();
 			OutgoingResponse response = new OutgoingResponse();
+			//First move has unique set of rules...
 			if (turn == 0)
 			{
 				//First Move of the Game
@@ -281,19 +283,41 @@ namespace ConnectTheDots.Web
 			}
 			line = new Line { start = startNode.Value, end = point };
 			Directions direction = CalculateDirection(line);
-			//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
-			if (IsSlopeSymmetrical(startNode.Value, point)) //if line traverse 8-direction node neighbors
+			//Does the line traverse 8-directional path to node neighbors?
+			if (!IsSlopeSymmetrical(startNode.Value, point)) 
 			{
-				if (Points[point].End || Points[point].Start == true) //If the head/tail do not connect
-				{
-					startNode = null;
-					response.msg = INVALID_END_NODE;
-					//response.body.newLine = line;
-					response.body.heading = Player;
-					response.body.message = "Invalid move! Cannot be connected to existing line";
-					return response;
-				}
-				if (IsDiagonalOverlap(startNode.Value, direction))
+				startNode = null;
+				response.msg = INVALID_END_NODE;
+				//response.body.newLine = line;
+				response.body.heading = Player;
+				response.body.message = "Invalid move!";
+				return response;
+			}
+			//Is the head and tail being connected, at the end of the line? Or connecting to any active node?
+			if (Points[point].End || Points[point].Start == true)
+			{
+				startNode = null;
+				response.msg = INVALID_END_NODE;
+				//response.body.newLine = line;
+				response.body.heading = Player;
+				response.body.message = "Invalid move! Cannot be connected to existing line";
+				return response;
+			}
+			//Is the line traversing over a 45 degree line segment?
+			if (IsDiagonalOverlap(startNode.Value, direction))
+			{
+				startNode = null;
+				response.msg = INVALID_END_NODE;
+				//response.body.newLine = line;
+				response.body.heading = Player;
+				response.body.message = "Invalid move! Intersection.";
+				return response;
+			}
+			//Are any of the nodes being used twice or overlapping?
+			IList<Node> edgeNodes = new Node[0];
+			foreach(KeyValuePair<int,Line> l in Turns)
+			{
+				if (LineContainsActivePoint(line, out edgeNodes)) //Works as name describes, but doesnt work for 1x1 diagnoal units (intersect between lines)
 				{
 					startNode = null;
 					response.msg = INVALID_END_NODE;
@@ -302,53 +326,51 @@ namespace ConnectTheDots.Web
 					response.body.message = "Invalid move! Intersection.";
 					return response;
 				}
-				foreach(KeyValuePair<int,Line> l in Turns)
-				{
-					if (LineContainsActivePoint(line)) //Works as name describes, but doesnt work for 1x1 diagnoal units (intersect between lines)
-					{
-						startNode = null;
-						response.msg = INVALID_END_NODE;
-						//response.body.newLine = line;
-						response.body.heading = Player;
-						response.body.message = "Invalid move! Intersection.";
-						return response;
-					}
-				}
-				//If I could resolve math equation for line segment intersect below... i could probably complete the game engine
-				//Run a loop each turn to check if game has ended, if there are no more moves available
-				//foreach(KeyValuePair<Point,Node> pair in Points)
+			}
+			//If I could resolve math equation for line segment intersect below... i could probably complete the game engine
+			//Run a loop each turn to check if game has ended, if there are no more moves available
+			//foreach(KeyValuePair<Point,Node> pair in Points)
+			//{
+			//	//Go through each available node, and try to connect a line between available and edge node
+			//	//if (!Points[pair.Key].End || Points[point].Start == null) //Nodes left to connect to
+			//	Line l = new Line { start = pair.Key, end = point };
+			//	//Check if any moves can be played on board...
+			//	if(LinesIntersect(line, l)) //Too Sensitive, start nodes triggered bool
+			//	{
+			//		startNode = null;
+			//		response.msg = INVALID_END_NODE;
+			//		//response.body.newLine = line;
+			//		response.body.heading = Player;
+			//		response.body.message = "Invalid move! Intersection. ";
+			//		return response;
+			//	}
+			//}
+			//Are there anymore moves left in the game?
+			foreach(Node n in edgeNodes) //for each head/tail on game grid
+			{
+				//if no more moves available
+				//if (!IsEdgeAvailable(n))
 				//{
-				//	//Go through each available node, and try to connect a line between available and edge node
-				//	//if (!Points[pair.Key].End || Points[point].Start == null) //Nodes left to connect to
-				//	Line l = new Line { start = pair.Key, end = point };
-				//	//Check if any moves can be played on board...
-				//	if(LinesIntersect(line, l)) //Too Sensitive, start nodes triggered bool
-				//	{
-				//		startNode = null;
-				//		response.msg = INVALID_END_NODE;
-				//		//response.body.newLine = line;
-				//		response.body.heading = Player;
-				//		response.body.message = "Invalid move! Intersection. ";
-				//		return response;
-				//	}
+				//	startNode = null;
+				//	response.msg = GAME_OVER;
+				//	response.body.newLine = line;
+				//	response.body.heading = "Game Over";
+				//	response.body.message = string.Format("{0} Wins!", Player);
+				//	return response;
 				//}
-				startNode = null;
-				IsPlayerOneTurn = false;
-				response.msg = VALID_END_NODE;
-				response.body.newLine = line;
-				response.body.heading = Player;
-				response.body.message = null;
-				AddPointsInLine(line, direction, turn + 1);
-				//Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
-				return response;
 			}
 			startNode = null;
-			response.msg = INVALID_END_NODE;
-			//response.body.newLine = line;
+			IsPlayerOneTurn = false;
+			response.msg = VALID_END_NODE;
+			response.body.newLine = line;
 			response.body.heading = Player;
-			response.body.message = "Invalid move!";
+			response.body.message = null;
+			AddPointsInLine(line, direction, turn + 1);
+			//Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
 			return response;
 		}
+
+		#region Private Methods
 		private Directions CalculateDirection(Line line)
 		{
 			//Positive is Right, Negative is Left
@@ -380,37 +402,52 @@ namespace ConnectTheDots.Web
 					return Directions.UP;
 			}
 		}
+		//private bool IsEdgeAvailable(Node node)
+		//{
+		//	Point origin = node.Position;
+		//	Line line = new Line();
+		//	//Positive is Right, Negative is Left
+		//	//Need to confirm if the two nodes can form a connecting line between each other (that blocks path)
+		//	if (Points[new Point { x = origin.x, y = origin.y - 1 }].End)	//UP 
+		//	if (Points[new Point { x = origin.x - 1, y = origin.y }].End)	//RIGHT
+		//	if (Points[new Point { x = origin.x + 1, y = origin.y }].End)	//LEFT
+		//	if (Points[new Point { x = origin.x, y = origin.y - 1 }].End)	//DOWN
+		//	{
+		//		if(IsDiagonalOverlap(origin, Directions.UP)) return false;
+		//		line = new Line
+		//		{
+		//			start	= origin,
+		//			end		= new Point { x = origin.x, y = origin.y - 1 }	//UP 
+		//			end		= new Point { x = origin.x, y = origin.y + 1 }	//DOWN 
+		//			end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
+		//			end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
+		//		};
+		//	}
+		//	return false;
+		//}
 		private bool IsDiagonalOverlap(Point origin, Directions direction)
 		{
 			//Positive is Right, Negative is Left
 			//Need to confirm if the two nodes form a connecting line between each other (that blocks path)
 			if (direction == Directions.UPRIGHT) 
-				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//UP 
-				//	&& Points[new Point { x = start.x - 1, y = start.y }].End;  //RIGHT
 				return Turns.Any(x => x.Value == new Line
 				{
 					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP 
 					end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
 				});
 			else if (direction == Directions.UPLEFT) 
-				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//UP 
-				//	&& Points[new Point { x = start.x + 1, y = start.y }].End;  //LEFT
 				return Turns.Any(x => x.Value == new Line
 				{
 					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP 
 					end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
 				});
 			else if (direction == Directions.DOWNLEFT) 
-				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//DOWN
-				//	&& Points[new Point { x = start.x - 1, y = start.y }].End;  //LEFT
 				return Turns.Any(x => x.Value == new Line
 				{
 					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN 
 					end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
 				});
 			else if (direction == Directions.DOWNRIGHT) 
-				//return Points[new Point { x = start.x, y = start.y - 1 }].End	//DOWN
-				//	&& Points[new Point { x = start.x - 1, y = start.y }].End;  //RIGHT
 				return Turns.Any(x => x.Value == new Line
 				{
 					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN 
@@ -427,8 +464,8 @@ namespace ConnectTheDots.Web
 		{
 			int x = Math.Abs(line.start.x - line.end.x);
 			int y = Math.Abs(line.start.y - line.end.y);
-			Point start = new Point(); Point end = new Point(); 
 			int i = 0; int n = 0; int z = 0;  //Z > 0 = next node in sequence, and can form a line with previous
+			Point start = new Point(); Point end = new Point(); //Lines that connect more that two nodes have each segment numbered.
 			switch (direction)
 			{
 				case Directions.UP:
@@ -440,7 +477,7 @@ namespace ConnectTheDots.Web
 						if (turn.HasValue && z > 0)
 						{
 							start = new Point { x = line.start.x, y = i + 1 };
-							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end })); 
 						}
 					}
 					break;
@@ -538,8 +575,9 @@ namespace ConnectTheDots.Web
 			}
 			Points[line.end].Start = true;
 		}
-		private bool LineContainsActivePoint(Line line)
+		private bool LineContainsActivePoint(Line line, out IList<Node> corners)
 		{
+			corners = new List<Node>();
 			//Determine if positive or negative for loop below
 			int directionX = line.end.x - line.start.x;
 			int directionY = line.end.y - line.start.y;
@@ -548,7 +586,13 @@ namespace ConnectTheDots.Web
 			foreach(KeyValuePair<Point,Node> pair in Points)
 			{
 				if (pair.Value.Start == null) continue; //If the node is not active in game; skip it
-				if (line.start == pair.Key || pair.Value.Start == true) continue; //Exceptions made for start of line
+				if (line.start == pair.Key) continue; //Exceptions made for start of line
+				if (pair.Value.Start == true)
+				{
+					if(!corners.Contains(pair.Value))
+						corners.Add(pair.Value); 
+					continue; //Exceptions made for start of line
+				}
 				Point p = pair.Key;
 				bool isOnX = false; //is the point horizontal to line?
 				bool isOnY = false; //is the point vertical to line?
@@ -572,7 +616,7 @@ namespace ConnectTheDots.Web
 					if (line.start.y > p.y && p.y > line.end.y)
 						isOnY = true;
 				}
-				if (isOnX || isOnY)
+				if (isOnX && isOnY)
 					return true; //it means the point collides with the line
 			}
 			return false;
@@ -592,6 +636,9 @@ namespace ConnectTheDots.Web
 			else 
 				return false;
 		}
+		#endregion
+
+		#region Not Used
 		/// <summary>
 		/// Return true if line segments AB and CD intersect
 		/// </summary>
@@ -660,5 +707,6 @@ namespace ConnectTheDots.Web
 
 			return false;
 		}
+		#endregion
 	}
 }
