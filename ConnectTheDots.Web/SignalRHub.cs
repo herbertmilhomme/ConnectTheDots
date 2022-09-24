@@ -407,83 +407,83 @@ namespace ConnectTheDots.Web
 			//Need to confirm if the two nodes can form a connecting line between each other (that blocks path)
 			//Check if open node and isnt head/tail
 			point = new Point { x = origin.x, y = origin.y - 1 };		//UP
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x, y = origin.y - 1 }].End)		//UP
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)		//UP
 			{
 				if(!IsDiagonalOverlap(origin, Directions.UP)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x, y = origin.y - 1 }		//UP
+					end		= point     //UP
 				};
 			}
 			point = new Point { x = origin.x, y = origin.y + 1 };		//DOWN
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x, y = origin.y + 1 }].End)		//DOWN
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)		//DOWN
 			{
 				if(!IsDiagonalOverlap(origin, Directions.DOWN)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x, y = origin.y + 1 }		//DOWN
+					end		= point     //DOWN
 				};
 			}
 			point = new Point { x = origin.x - 1, y = origin.y };		//RIGHT
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x - 1, y = origin.y }].End)		//RIGHT
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)		//RIGHT
 			{
 				if(!IsDiagonalOverlap(origin, Directions.RIGHT)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x - 1, y = origin.y }		//RIGHT
+					end		= point     //RIGHT
 				};
 			}
 			point = new Point { x = origin.x + 1, y = origin.y };		//LEFT
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x + 1, y = origin.y }].End)		//LEFT
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)		//LEFT
 			{
 				if(!IsDiagonalOverlap(origin, Directions.LEFT)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x + 1, y = origin.y }		//LEFT
+					end		= point     //LEFT
 				};
 			}
 			point = new Point { x = origin.x + 1, y = origin.y - 1 };	//UPLEFT
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x + 1, y = origin.y - 1 }].End)	//UPLEFT
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)	//UPLEFT
 			{
 				if(!IsDiagonalOverlap(origin, Directions.UPLEFT)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x + 1, y = origin.y - 1 }	//UPLEFT
+					end		= point //UPLEFT
 				};
 			}
 			point = new Point { x = origin.x - 1, y = origin.y + 1 };	//DOWNRIGHT
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x - 1, y = origin.y + 1 }].End)	//DOWNRIGHT
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)	//DOWNRIGHT
 			{
 				if(!IsDiagonalOverlap(origin, Directions.DOWNRIGHT)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x - 1, y = origin.y + 1 }	//DOWNRIGHT
+					end		= point //DOWNRIGHT
 				};
 			}
 			point = new Point { x = origin.x - 1, y = origin.y - 1 };	//UPRIGHT
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x - 1, y = origin.y - 1 }].End)	//UPRIGHT
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)	//UPRIGHT
 			{
 				if(!IsDiagonalOverlap(origin, Directions.UPRIGHT)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x - 1, y = origin.y - 1 }	//UPRIGHT
+					end		= point //UPRIGHT
 				};
 			}
 			point = new Point { x = origin.x + 1, y = origin.y + 1 };	//DOWNLEFT
-			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x + 1, y = origin.y + 1 }].End)	//DOWNLEFT
+			if ((point.x >= 0 && point.x < 4) && (point.y >= 0 && point.y < 4) && !Points[point].End)	//DOWNLEFT
 			{
 				if(!IsDiagonalOverlap(origin, Directions.DOWNLEFT)) return true;
 				line = new Line
 				{
 					start	= origin,
-					end		= new Point { x = origin.x + 1, y = origin.y + 1 }	//DOWNLEFT
+					end		= point //DOWNLEFT
 				};
 			}
 			return false;
