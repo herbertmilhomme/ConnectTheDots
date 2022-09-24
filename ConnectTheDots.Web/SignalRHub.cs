@@ -17,7 +17,12 @@ namespace ConnectTheDots.Web
 		/// </summary>
 		public void Send()
 		{
-			Clients.All.testMessage("HelloWorld", "Greetings!");
+			Clients.Caller.testMessage("HelloWorld", "Greetings!");
+		}
+		
+		public void Refresh()
+		{
+			Clients.All.refresh();
 		}
 		
 		public void Send(IncomingRequest obj)
@@ -27,7 +32,7 @@ namespace ConnectTheDots.Web
 				if (obj.msg == Game.NODE_CLICKED)
 				{
 					OutgoingResponse arg = game.Action(obj.body);
-					Clients.Caller.broadcastMessage(PayloadToJsonString(arg));
+					Clients.All.broadcastMessage(PayloadToJsonString(arg));
 				}
 			}
 			catch (Exception ex)
@@ -51,6 +56,9 @@ namespace ConnectTheDots.Web
 					string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
 						"null", head, msg) + 
 				"}}";
+			//If a VALID_END_NODE also constitutes the last move in the game,
+			//the Server should send GAME_OVER in the msg field instead.
+			//All other states should contain NULL in the newLine field. 
 			if (id == Game.VALID_END_NODE || id == Game.GAME_OVER)
 				json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
 					"{" +

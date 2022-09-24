@@ -6,7 +6,8 @@
 </head>
 <body>
 	<p>If game doesnt start, press button a few times, to reconnect to server</p>
-	<input id="initialize" type="button" name="reset" value="reset" title="reset" />
+	<input id="refresh" type="button" name="reset" value="reset" title="reset" />
+	<input id="initialize" type="button" name="connect" value="new game" title="new game" />
 	<!--<button id="initialize" type="button" name="reset" title="reset">reset</button>-->
 	<div id="app"></div>
 	<!--Script references. -->
@@ -47,6 +48,9 @@
 			// Create a function that the hub can call to broadcast messages.
 			signalrHub.client.testMessage = function (name, message) { console.log(name + '-' + message); };
 
+			//This will refresh the page for all viewing, at the same time
+			signalrHub.client.refresh = function () { window.location.reload(); };
+
 			signalrHub.client.broadcastMessage = function (message) {
 				console.log(message);
 				message = JSON.parse(message);
@@ -82,10 +86,19 @@
 
 				//$('#initialize').click(function () {
 				document.getElementById('initialize').addEventListener('click', function (event) {
-					console.log("Button clicked!");
+					console.log("Initialize Button clicked!");
 					signalrHub.server.send();
 					// Call the broadcastMessage method on the hub.
 					signalrHub.server.initialize();
+					event.preventDefault();
+				});
+
+				//$('#initialize').click(function () {
+				document.getElementById('refresh').addEventListener('click', function (event) {
+					console.log("Refresh Button clicked!");
+					signalrHub.server.send();
+					// Call the broadcastMessage method on the hub.
+					signalrHub.server.refresh();
 					event.preventDefault();
 				});
 			});
