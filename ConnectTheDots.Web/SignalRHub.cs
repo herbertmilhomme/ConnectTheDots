@@ -325,7 +325,7 @@ namespace ConnectTheDots.Web
 			IList<Node> edgeNodes = new Node[0];
 			foreach(KeyValuePair<int,Line> l in Turns)
 			{
-				if (LineContainsActivePoint(line, startNode.Value, out edgeNodes)) //Works as name describes, but doesnt work for 1x1 diagonal units (x-intersect between lines)
+				if (LineContainsActivePoint(line, startNode.Value, out edgeNodes))
 				{
 					startNode = null;
 					response.msg = INVALID_END_NODE;
@@ -335,27 +335,14 @@ namespace ConnectTheDots.Web
 					return response;
 				}
 			}
-			//If I could resolve math equation for line segment intersect below... i could probably complete the game engine
-			//Run a loop each turn to check if game has ended, if there are no more moves available
-			//foreach(KeyValuePair<Point,Node> pair in Points)
-			//{
-			//	//Go through each available node, and try to connect a line between available and edge node
-			//	//if (!Points[pair.Key].End || Points[point].Start == null) //Nodes left to connect to
-			//	Line l = new Line { start = pair.Key, end = point };
-			//	//Check if any moves can be played on board...
-			//	if(LinesIntersect(line, l)) //Too Sensitive, start nodes triggered bool
-			//	{
-			//		startNode = null;
-			//		response.msg = INVALID_END_NODE;
-			//		//response.body.newLine = line;
-			//		response.body.heading = Player;
-			//		response.body.message = "Invalid move! Intersection. ";
-			//		return response;
-			//	}
-			//}
 			//Are there anymore moves left in the game?
+			//Run a loop to check if game has ended, if there are no more moves available
+			//foreach(KeyValuePair<Point,Node> pair in Points)
 			foreach(Node n in edgeNodes) //for each head/tail on game grid
 			{
+				//Go through each available node, and try to connect a line between available and edge node
+				//if (!Points[pair.Key].End || Points[point].Start == null) //Nodes left to connect to
+				//Line l = new Line { start = n.Position, end = point };
 				//if no more moves available
 				//if (!IsEdgeAvailable(n))
 				//{
@@ -411,29 +398,96 @@ namespace ConnectTheDots.Web
 					return Directions.UP;
 			}
 		}
-		//private bool IsEdgeAvailable(Node node)
-		//{
-		//	Point origin = node.Position;
-		//	Line line = new Line();
-		//	//Positive is Right, Negative is Left
-		//	//Need to confirm if the two nodes can form a connecting line between each other (that blocks path)
-		//	if (Points[new Point { x = origin.x, y = origin.y - 1 }].End)	//UP
-		//	if (Points[new Point { x = origin.x - 1, y = origin.y }].End)	//RIGHT
-		//	if (Points[new Point { x = origin.x + 1, y = origin.y }].End)	//LEFT
-		//	if (Points[new Point { x = origin.x, y = origin.y - 1 }].End)	//DOWN
-		//	{
-		//		if(IsDiagonalOverlap(origin, Directions.UP)) return false;
-		//		line = new Line
-		//		{
-		//			start	= origin,
-		//			end		= new Point { x = origin.x, y = origin.y - 1 }	//UP
-		//			end		= new Point { x = origin.x, y = origin.y + 1 }	//DOWN
-		//			end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
-		//			end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
-		//		};
-		//	}
-		//	return false;
-		//}
+		private bool IsEdgeAvailable(Node node)
+		{
+			Point origin = node.Position;
+			Point point = new Point();
+			Line line = new Line();
+			//Positive is Right, Negative is Left
+			//Need to confirm if the two nodes can form a connecting line between each other (that blocks path)
+			//Check if open node and isnt head/tail
+			point = new Point { x = origin.x, y = origin.y - 1 };		//UP
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x, y = origin.y - 1 }].End)		//UP
+			{
+				if(!IsDiagonalOverlap(origin, Directions.UP)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x, y = origin.y - 1 }		//UP
+				};
+			}
+			point = new Point { x = origin.x, y = origin.y + 1 };		//DOWN
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x, y = origin.y + 1 }].End)		//DOWN
+			{
+				if(!IsDiagonalOverlap(origin, Directions.DOWN)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x, y = origin.y + 1 }		//DOWN
+				};
+			}
+			point = new Point { x = origin.x - 1, y = origin.y };		//RIGHT
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x - 1, y = origin.y }].End)		//RIGHT
+			{
+				if(!IsDiagonalOverlap(origin, Directions.RIGHT)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x - 1, y = origin.y }		//RIGHT
+				};
+			}
+			point = new Point { x = origin.x + 1, y = origin.y };		//LEFT
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x + 1, y = origin.y }].End)		//LEFT
+			{
+				if(!IsDiagonalOverlap(origin, Directions.LEFT)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x + 1, y = origin.y }		//LEFT
+				};
+			}
+			point = new Point { x = origin.x + 1, y = origin.y - 1 };	//UPLEFT
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x + 1, y = origin.y - 1 }].End)	//UPLEFT
+			{
+				if(!IsDiagonalOverlap(origin, Directions.UPLEFT)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x + 1, y = origin.y - 1 }	//UPLEFT
+				};
+			}
+			point = new Point { x = origin.x - 1, y = origin.y + 1 };	//DOWNRIGHT
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x - 1, y = origin.y + 1 }].End)	//DOWNRIGHT
+			{
+				if(!IsDiagonalOverlap(origin, Directions.DOWNRIGHT)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x - 1, y = origin.y + 1 }	//DOWNRIGHT
+				};
+			}
+			point = new Point { x = origin.x - 1, y = origin.y - 1 };	//UPRIGHT
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x - 1, y = origin.y - 1 }].End)	//UPRIGHT
+			{
+				if(!IsDiagonalOverlap(origin, Directions.UPRIGHT)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x - 1, y = origin.y - 1 }	//UPRIGHT
+				};
+			}
+			point = new Point { x = origin.x + 1, y = origin.y + 1 };	//DOWNLEFT
+			if ((point.x >= 0 || point.x < 4) && (point.y >= 0 || point.y < 4) && !Points[new Point { x = origin.x + 1, y = origin.y + 1 }].End)	//DOWNLEFT
+			{
+				if(!IsDiagonalOverlap(origin, Directions.DOWNLEFT)) return true;
+				line = new Line
+				{
+					start	= origin,
+					end		= new Point { x = origin.x + 1, y = origin.y + 1 }	//DOWNLEFT
+				};
+			}
+			return false;
+		}
 		private bool IsDiagonalOverlap(Point origin, Directions direction)
 		{
 			//Positive is Right, Negative is Left
@@ -647,77 +701,6 @@ namespace ConnectTheDots.Web
 				return true;
 			else
 				return false;
-		}
-		#endregion
-
-		#region Not Used
-		/// <summary>
-		/// Return true if line segments AB and CD intersect
-		/// </summary>
-		/// <param name="a"></param>
-		/// <param name="b"></param>
-		/// <returns></returns>
-		private static bool LinesIntersect(Line a, Line b)
-		{
-			return doIntersect(a.start, b.start, a.end, b.end);
-		}
-		//https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-		// The main function that returns true if line segment 'p1q1'
-		// and 'p2q2' intersect.
-		static bool doIntersect(Point p1, Point q1, Point p2, Point q2)
-		{
-			// Find the four orientations needed for general and
-			// special cases
-			int o1 = orientation(p1, q1, p2);
-			int o2 = orientation(p1, q1, q2);
-			int o3 = orientation(p2, q2, p1);
-			int o4 = orientation(p2, q2, q1);
-
-			// General case
-			if (o1 != o2 && o3 != o4)
-				return true;
-
-			// Special Cases
-			// p1, q1 and p2 are collinear and p2 lies on segment p1q1
-			if (o1 == 0 && onSegment(p1, p2, q1)) return true;
-
-			// p1, q1 and q2 are collinear and q2 lies on segment p1q1
-			if (o2 == 0 && onSegment(p1, q2, q1)) return true;
-
-			// p2, q2 and p1 are collinear and p1 lies on segment p2q2
-			if (o3 == 0 && onSegment(p2, p1, q2)) return true;
-
-			// p2, q2 and q1 are collinear and q1 lies on segment p2q2
-			if (o4 == 0 && onSegment(p2, q1, q2)) return true;
-
-			return false; // Doesn't fall in any of the above cases
-		}
-
-		// To find orientation of ordered triplet (p, q, r).
-		// The function returns following values
-		// 0 --> p, q and r are collinear
-		// 1 --> Clockwise
-		// 2 --> Counterclockwise
-		static int orientation(Point p, Point q, Point r)
-		{
-			// See https://www.geeksforgeeks.org/orientation-3-ordered-points/
-			// for details of below formula.
-			int val = (q.y - p.y) * (r.x - q.x) -
-					(q.x - p.x) * (r.y - q.y);
-
-			if (val == 0) return 0; // collinear
-
-			return (val > 0) ? 1 : 2; // clock or counter-clockwise
-		}
-		// Given three collinear points p, q, r, the function checks if
-		// point q lies on line segment 'pr'
-		static bool onSegment(Point p, Point q, Point r)
-		{
-			if (q.x <= Math.Max(p.x, r.x) && q.x >= Math.Min(p.x, r.x) &&
-				q.y <= Math.Max(p.y, r.y) && q.y >= Math.Min(p.y, r.y))
-				return true;
-
-			return false;
 		}
 		#endregion
 	}
