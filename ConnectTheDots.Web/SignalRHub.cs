@@ -335,25 +335,28 @@ namespace ConnectTheDots.Web
 					return response;
 				}
 			}
+			AddPointsInLine(line, direction, turn + 1); //Everything up to this point has already confirmed a valid move entry
 			//Are there anymore moves left in the game?
 			//Run a loop to check if game has ended, if there are no more moves available
 			//foreach(KeyValuePair<Point,Node> pair in Points)
-			foreach(Node n in edgeNodes) //for each head/tail on game grid
-			{
-				//Go through each available node, and try to connect a line between available and edge node
-				//if (!Points[pair.Key].End || Points[point].Start == null) //Nodes left to connect to
-				//Line l = new Line { start = n.Position, end = point };
-				//if no more moves available
-				//if (!IsEdgeAvailable(n))
-				//{
-				//	startNode = null;
-				//	response.msg = GAME_OVER;
-				//	response.body.newLine = line;
-				//	response.body.heading = "Game Over";
-				//	response.body.message = string.Format("{0} Wins!", Player);
-				//	return response;
-				//}
-			}
+			edgeNodes = Points.Values.Where(x => x.Start == true).ToArray(); //I could've done this from the very beginning...
+			if(edgeNodes.Count == 2)
+				foreach (Node n in edgeNodes) //for each head/tail on game grid
+				{
+					//Go through each available node, and try to connect a line between available and edge node
+					//if (!Points[pair.Key].End || Points[point].Start == null) //Nodes left to connect to
+					//Line l = new Line { start = n.Position, end = point };
+					//if no more moves available
+					//if (!IsEdgeAvailable(n)) //ToDo: Game is ending too prematurely...
+					//{
+					//	startNode = null;
+					//	response.msg = GAME_OVER;
+					//	response.body.newLine = line;
+					//	response.body.heading = "Game Over";
+					//	response.body.message = string.Format("{0} Wins!", Player);
+					//	return response;
+					//}
+				}
 			//If all the rules have passed, and there are no responses, then create line...
 			startNode = null;
 			IsPlayerOneTurn = !IsPlayerOneTurn;
@@ -361,7 +364,6 @@ namespace ConnectTheDots.Web
 			response.body.newLine = line;
 			response.body.heading = Player;
 			response.body.message = null;
-			AddPointsInLine(line, direction, turn + 1);
 			//Turns.Add(new KeyValuePair<int, Line>(turn + 1, line));
 			return response;
 		}
@@ -649,14 +651,14 @@ namespace ConnectTheDots.Web
 			//ToDo: If an X is formed between nodes, the loop does not prevent it...
 			foreach(KeyValuePair<Point,Node> pair in Points)
 			{
-				if (ignore == pair.Key) continue;		//Exceptions made for start of line
-				if (pair.Value.Start == null) continue;	//If the node is not active in game; skip it
 				if (pair.Value.Start == true)
 				{
 					if(!corners.Contains(pair.Value))
 						corners.Add(pair.Value);		//Add Head/Tail to separate list for later...
 					continue;							//Exceptions made for start of line
 				}
+				if (pair.Value.Start == null) continue;	//If the node is not active in game; skip it
+				if (ignore == pair.Key) continue;		//Exceptions made for start of line
 				Point p = pair.Key;
 				bool isOnX = false;		//is the point horizontal to line?
 				bool isOnY = false;		//is the point vertical to line?
