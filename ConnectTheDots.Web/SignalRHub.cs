@@ -19,12 +19,12 @@ namespace ConnectTheDots.Web
 		{
 			Clients.Caller.testMessage("HelloWorld", "Greetings!");
 		}
-		
+
 		public void Refresh()
 		{
 			Clients.All.refresh();
 		}
-		
+
 		public void Send(IncomingRequest obj)
 		{
 			try
@@ -40,7 +40,7 @@ namespace ConnectTheDots.Web
 				Clients.All.testMessage("ExceptionError", ex.ToString());
 			}
 		}
-		
+
 		public void Initialize()
 		{
 			game.Initialize();
@@ -54,11 +54,11 @@ namespace ConnectTheDots.Web
 			string json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
 				"{" +
 					string.Format("\"newLine\": {0}, \"heading\": {1}, \"message\": {2}",
-						"null", head, msg) + 
+						"null", head, msg) +
 				"}}";
 			//If a VALID_END_NODE also constitutes the last move in the game,
 			//the Server should send GAME_OVER in the msg field instead.
-			//All other states should contain NULL in the newLine field. 
+			//All other states should contain NULL in the newLine field.
 			if (id == Game.VALID_END_NODE || id == Game.GAME_OVER)
 				json = "{" + string.Format("\"msg\": \"{0}\", \"body\":", id) +
 					"{" +
@@ -154,7 +154,7 @@ namespace ConnectTheDots.Web
 	{
 		public Point Position { get; private set; }
 		/// <summary>
-		/// (*)=> 
+		/// (*)=>
 		/// Node can still connect
 		/// </summary>
 		public bool? Start;
@@ -200,7 +200,7 @@ namespace ConnectTheDots.Web
 		/// <summary>
 		/// Track move-turns made by each entry to a numbered list
 		/// </summary>
-		/// Each move is numbered. Lines that connect more that two nodes have each segment numbered. 
+		/// Each move is numbered. Lines that connect more that two nodes have each segment numbered.
 		public List<KeyValuePair<int,Line>> Turns;
 		/// <summary>
 		/// A HashSet that stores all the values on game grid, and tracks status Nodes
@@ -220,7 +220,7 @@ namespace ConnectTheDots.Web
 			for (int y = 0; y < 4; y++)
 				for (int x = 0; x < 4; x++)
 						Points.Add(new Point { x = x, y = y }, new Node(new Point { x = x, y = y }));
-						
+
 		}
 		public OutgoingResponse Action(Point point)
 		{
@@ -292,7 +292,7 @@ namespace ConnectTheDots.Web
 			line = new Line { start = startNode.Value, end = point };
 			Directions direction = CalculateDirection(line);
 			//Does the line traverse 8-directional path to node neighbors?
-			if (!IsSlopeSymmetrical(startNode.Value, point)) 
+			if (!IsSlopeSymmetrical(startNode.Value, point))
 			{
 				startNode = null;
 				response.msg = INVALID_END_NODE;
@@ -325,7 +325,7 @@ namespace ConnectTheDots.Web
 			IList<Node> edgeNodes = new Node[0];
 			foreach(KeyValuePair<int,Line> l in Turns)
 			{
-				if (LineContainsActivePoint(line, out edgeNodes)) //Works as name describes, but doesnt work for 1x1 diagnoal units (intersect between lines)
+				if (LineContainsActivePoint(line, out edgeNodes)) //Works as name describes, but doesnt work for 1x1 diagonal units (x-intersect between lines)
 				{
 					startNode = null;
 					response.msg = INVALID_END_NODE;
@@ -417,7 +417,7 @@ namespace ConnectTheDots.Web
 		//	Line line = new Line();
 		//	//Positive is Right, Negative is Left
 		//	//Need to confirm if the two nodes can form a connecting line between each other (that blocks path)
-		//	if (Points[new Point { x = origin.x, y = origin.y - 1 }].End)	//UP 
+		//	if (Points[new Point { x = origin.x, y = origin.y - 1 }].End)	//UP
 		//	if (Points[new Point { x = origin.x - 1, y = origin.y }].End)	//RIGHT
 		//	if (Points[new Point { x = origin.x + 1, y = origin.y }].End)	//LEFT
 		//	if (Points[new Point { x = origin.x, y = origin.y - 1 }].End)	//DOWN
@@ -426,8 +426,8 @@ namespace ConnectTheDots.Web
 		//		line = new Line
 		//		{
 		//			start	= origin,
-		//			end		= new Point { x = origin.x, y = origin.y - 1 }	//UP 
-		//			end		= new Point { x = origin.x, y = origin.y + 1 }	//DOWN 
+		//			end		= new Point { x = origin.x, y = origin.y - 1 }	//UP
+		//			end		= new Point { x = origin.x, y = origin.y + 1 }	//DOWN
 		//			end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
 		//			end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
 		//		};
@@ -438,28 +438,28 @@ namespace ConnectTheDots.Web
 		{
 			//Positive is Right, Negative is Left
 			//Need to confirm if the two nodes form a connecting line between each other (that blocks path)
-			if (direction == Directions.UPRIGHT) 
+			if (direction == Directions.UPRIGHT)
 				return Turns.Any(x => x.Value == new Line
 				{
-					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP 
+					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP
 					end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
 				});
-			else if (direction == Directions.UPLEFT) 
+			else if (direction == Directions.UPLEFT)
 				return Turns.Any(x => x.Value == new Line
 				{
-					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP 
+					start	= new Point { x = origin.x, y = origin.y - 1 },	//UP
 					end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
 				});
-			else if (direction == Directions.DOWNLEFT) 
+			else if (direction == Directions.DOWNLEFT)
 				return Turns.Any(x => x.Value == new Line
 				{
-					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN 
+					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN
 					end		= new Point { x = origin.x + 1, y = origin.y }	//LEFT
 				});
-			else if (direction == Directions.DOWNRIGHT) 
+			else if (direction == Directions.DOWNRIGHT)
 				return Turns.Any(x => x.Value == new Line
 				{
-					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN 
+					start	= new Point { x = origin.x, y = origin.y + 1 },	//DOWN
 					end		= new Point { x = origin.x - 1, y = origin.y }	//RIGHT
 				});
 			return false;
@@ -486,7 +486,7 @@ namespace ConnectTheDots.Web
 						if (turn.HasValue && z > 0)
 						{
 							start = new Point { x = line.start.x, y = i + 1 };
-							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end })); 
+							Turns.Add(new KeyValuePair<int, Line>(turn.Value, new Line { start = start, end = end }));
 						}
 					}
 					break;
@@ -590,7 +590,7 @@ namespace ConnectTheDots.Web
 			//Determine if positive or negative for loop below
 			int directionX = line.end.x - line.start.x;
 			int directionY = line.end.y - line.start.y;
-			//Only works to check if lines intersect by checking node points. 
+			//Only works to check if lines intersect by checking node points.
 			//ToDo: If an X is formed between nodes, the loop does not prevent it...
 			foreach(KeyValuePair<Point,Node> pair in Points)
 			{
@@ -599,7 +599,7 @@ namespace ConnectTheDots.Web
 				if (pair.Value.Start == true)
 				{
 					if(!corners.Contains(pair.Value))
-						corners.Add(pair.Value); 
+						corners.Add(pair.Value);
 					continue; //Exceptions made for start of line
 				}
 				Point p = pair.Key;
@@ -625,13 +625,13 @@ namespace ConnectTheDots.Web
 					if (line.start.y > p.y && p.y > line.end.y)
 						isOnY = true;
 				}
-				if (isOnX && isOnY)
+				if (isOnX || isOnY)
 					return true; //it means the point collides with the line
 			}
 			return false;
 		}
 		/// <summary>
-		/// Returns tru if slope or angle of line is 45 degress
+		/// Returns true if slope or angle of line is 45 degrees
 		/// </summary>
 		/// <param name="start"></param>
 		/// <param name="end"></param>
@@ -642,7 +642,7 @@ namespace ConnectTheDots.Web
 			int y = Math.Abs(start.y - end.y);
 			if (x == 0 || y == 0 || Math.Abs(x - y) == 0)
 				return true;
-			else 
+			else
 				return false;
 		}
 		#endregion
@@ -704,7 +704,7 @@ namespace ConnectTheDots.Web
 
 			if (val == 0) return 0; // collinear
 
-			return (val > 0) ? 1 : 2; // clock or counterclock wise
+			return (val > 0) ? 1 : 2; // clock or counter-clockwise
 		}
 		// Given three collinear points p, q, r, the function checks if
 		// point q lies on line segment 'pr'
