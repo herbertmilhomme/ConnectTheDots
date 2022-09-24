@@ -217,7 +217,7 @@ namespace ConnectTheDots.Web
 		{
 			int count = 0;
 			int turn = Turns.Count;
-			Line line = new Line { start = startNode.Value, end = point };
+			Line line = new Line ();
 			OutgoingResponse response = new OutgoingResponse();
 			if (turn == 0)
 			{
@@ -233,6 +233,7 @@ namespace ConnectTheDots.Web
 				//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
 				if(IsSlopeSymmetrical(startNode.Value, point))
 				{
+					line = new Line { start = startNode.Value, end = point };
 					AddPointsInLine(line, turn + 1);
 					//The first line both ends are able to branch from...
 					Points[startNode.Value].Start = true;
@@ -278,11 +279,12 @@ namespace ConnectTheDots.Web
 				response.body.message = "Select a second node to complete the line.";
 				return response;
 			}
+			line = new Line { start = startNode.Value, end = point };
 			Directions direction = CalculateDirection(line);
 			//need to confirm if end node forms a straight line, i.e. a slope of 0 or a 1:1 between x and y
-			if (IsSlopeSymmetrical(startNode.Value, point)) //if it's a straight line and doesnt overlap
+			if (IsSlopeSymmetrical(startNode.Value, point)) //if line traverse 8-direction node neighbors
 			{
-				if (Points[point].End || Points[point].Start == true)
+				if (Points[point].End || Points[point].Start == true) //If the head/tail do not connect
 				{
 					startNode = null;
 					response.msg = INVALID_END_NODE;
