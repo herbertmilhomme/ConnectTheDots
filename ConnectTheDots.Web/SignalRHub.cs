@@ -325,7 +325,7 @@ namespace ConnectTheDots.Web
 			IList<Node> edgeNodes = new Node[0];
 			foreach(KeyValuePair<int,Line> l in Turns)
 			{
-				if (LineContainsActivePoint(line, out edgeNodes)) //Works as name describes, but doesnt work for 1x1 diagonal units (x-intersect between lines)
+				if (LineContainsActivePoint(line, direction, out edgeNodes)) //Works as name describes, but doesnt work for 1x1 diagonal units (x-intersect between lines)
 				{
 					startNode = null;
 					response.msg = INVALID_END_NODE;
@@ -369,7 +369,7 @@ namespace ConnectTheDots.Web
 			}
 			//If all the rules have passed, and there are no responses, then create line...
 			startNode = null;
-			IsPlayerOneTurn = false;
+			IsPlayerOneTurn = !IsPlayerOneTurn;
 			response.msg = VALID_END_NODE;
 			response.body.newLine = line;
 			response.body.heading = Player;
@@ -584,8 +584,9 @@ namespace ConnectTheDots.Web
 			}
 			Points[line.end].Start = true;
 		}
-		private bool LineContainsActivePoint(Line line, out IList<Node> corners)
+		private bool LineContainsActivePoint(Line line, Directions direction, out IList<Node> corners)
 		{
+			bool results = false;
 			corners = new List<Node>();
 			//Determine if positive or negative for loop below
 			int directionX = line.end.x - line.start.x;
@@ -594,16 +595,16 @@ namespace ConnectTheDots.Web
 			//ToDo: If an X is formed between nodes, the loop does not prevent it...
 			foreach(KeyValuePair<Point,Node> pair in Points)
 			{
-				if (pair.Value.Start == null) continue; //If the node is not active in game; skip it
 				if (line.start == pair.Key) continue; //Exceptions made for start of line
+				if (pair.Value.Start == null) continue; //If the node is not active in game; skip it
 				if (pair.Value.Start == true)
 				{
 					if(!corners.Contains(pair.Value))
-						corners.Add(pair.Value);
+						corners.Add(pair.Value); //Add Head/Tail to separate list for later...
 					continue; //Exceptions made for start of line
 				}
 				Point p = pair.Key;
-				bool isOnX = false; //is the point horizontal to line?
+				/*bool isOnX = false; //is the point horizontal to line?
 				bool isOnY = false; //is the point vertical to line?
 				if (directionX > 0) //means end is greater than start
 				{
@@ -625,10 +626,19 @@ namespace ConnectTheDots.Web
 					if (line.start.y > p.y && p.y > line.end.y)
 						isOnY = true;
 				}
-				if (isOnX || isOnY)
-					return true; //it means the point collides with the line
+				//if (direction == Directions.UP ||
+				//	direction == Directions.DOWN ||
+				//	direction == Directions.LEFT ||
+				//	direction == Directions.RIGHT)
+					if (isOnX || isOnY)
+						return true; //it means the point collides with the line*/
+
+				//a simple math equation to check if any of the active nodes are in between new line segment.
+				//if (IsPointOnLine(line.start, line.end, p))
+				if (IsBetween(line.start, line.end, p))
+					results = true;
 			}
-			return false;
+			return results;
 		}
 		/// <summary>
 		/// Returns true if slope or angle of line is 45 degrees
@@ -644,6 +654,62 @@ namespace ConnectTheDots.Web
 				return true;
 			else
 				return false;
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="linePointA"></param>
+		/// <param name="linePointB"></param>
+		/// <param name="point"></param>
+		/// <returns></returns>
+		/// https://stackoverflow.com/a/20888285/3681384
+		private bool IsPointOnLine(Point linePointA, Point linePointB, Point point)
+		{
+			const float EPSILON = 0.001f;
+			//float m = (linePointB.y - linePointA.y) / (linePointB.x - linePointA.x);
+			//float b = linePointA.y - m * linePointA.x;
+			//return Math.Abs(point.y - (m * point.x + b)) < EPSILON;
+			if (Math.Abs(linePointA.x - linePointB.x) < EPSILON)
+			{
+				// We've a vertical line, thus check only the x-value of the point.
+				return (Math.Abs(point.x - linePointA.x) < EPSILON);
+			}
+			else
+			{
+				float m = (linePointB.y - linePointA.y) / (linePointB.x - linePointA.x);
+				float b = linePointA.y - m * linePointA.x;
+				return (Math.Abs(point.y - (m * point.x + b)) < EPSILON);
+			}
+		}
+		// https://stackoverflow.com/a/23388247/3681384
+		//public bool IsPointOnLineSegment(Point staPt, Point endPt, Point point)
+		//{
+		//	const float EPSILON = 0.001f;
+		//	if (IsPointOnLine(staPt, endPt, point))
+		//	{
+		//		// Create lineSegment bounding-box.
+		//		RectF lb = new RectF(staPt.x, staPt.y, endPt.x, endPt.y);
+		//		// Extend bounds with epsilon.
+		//		RectF bounds = new RectF(lb.left - EPSILON, lb.top - EPSILON, lb.right + EPSILON, lb.bottom + EPSILON);
+		//		// Check if point is contained within lineSegment-bounds.
+		//		return bounds.contains(point.x, point.y);
+		//	}
+		//	return false;
+		//}
+		//https://stackoverflow.com/a/29301940/3681384
+		private static int DotProduct(Point v, Point w)
+		{
+			return v.x * w.x + v.y * w.y;
+		}
+		private static int Wedge(Point v, Point w)
+		{
+			return v.x * w.y - v.y * w.x;
+		}
+		private static bool IsBetween(Point a, Point b, Point c)
+		{
+			Point v = new Point { x = a.x - b.x, y = a.y - b.y }; //a - b;
+			Point w = new Point { x = b.x - c.x, y = b.y - c.y }; //b - c;
+			return Wedge(v, w) == 0 && DotProduct(v, w) > 0;
 		}
 		#endregion
 
